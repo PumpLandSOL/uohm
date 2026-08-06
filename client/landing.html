@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UNIC — the unicorn reserve · (3,3) · Robinhood Chain</title>
+<meta name="description" content="The unicorn reserve — an OHM-style (3,3) reserve protocol on Robinhood Chain, dressed in DeFi's favorite pink. Stake $UNIC, bond the treasury, ride the rebase.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --accent:#FF007A;--accent-hover:#e5006e;--accent-soft:#ffe3f1;--accent-mid:#ffc2de;--accent-contrast:#fff;
+    --bg:#fdf6fa;--card:#fff;--elevated:#fff;
+    --ink:#111;--sub:rgba(17,17,17,.55);--mut:rgba(17,17,17,.4);
+    --line:rgba(17,17,17,.1);--line2:rgba(17,17,17,.16);
+    --glass-fill:rgba(255,255,255,.7);--glass-border:rgba(255,255,255,.82);
+    --glass-hl:inset 0 1px 0 rgba(255,255,255,.7);
+    --float-sh:0 1px 2px rgba(17,17,17,.04),0 8px 24px rgba(17,17,17,.06),0 24px 48px rgba(17,17,17,.04);
+    --sh:0 2px 12px rgba(17,17,17,.05);
+    --btn-glow:0 8px 24px rgba(255,0,122,.35);
+    --track:rgba(17,17,17,.08);
+    --banner-bg:#111;--banner-fg:rgba(255,255,255,.88);--banner-mut:rgba(255,255,255,.5);
+    --r-card:24px;--r-float:28px;--r-pill:999px;
+    --ease:cubic-bezier(.22,1,.36,1)}
+  html[data-theme="dark"]{
+    --bg:#0d0d0d;--card:#161616;--elevated:#1c1c1c;
+    --ink:#f2f2f2;--sub:rgba(242,242,242,.58);--mut:rgba(242,242,242,.4);
+    --line:rgba(242,242,242,.12);--line2:rgba(242,242,242,.2);
+    --accent-soft:#2b0a1c;--accent-mid:#43102b;--accent-hover:#ff2b90;
+    --glass-fill:rgba(22,22,22,.78);--glass-border:rgba(255,255,255,.1);
+    --glass-hl:inset 0 1px 0 rgba(255,255,255,.06);
+    --float-sh:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.35),0 24px 48px rgba(0,0,0,.28);
+    --sh:0 2px 12px rgba(0,0,0,.28);
+    --btn-glow:0 8px 24px rgba(255,0,122,.28);
+    --track:rgba(242,242,242,.1);
+    --banner-bg:#050505}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;transition:background .28s var(--ease),color .28s var(--ease)}
+  body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+    radial-gradient(52% 42% at 50% -8%,rgba(255,0,122,.3),transparent 64%),
+    radial-gradient(40% 34% at 92% 18%,rgba(255,0,122,.14),transparent 60%),
+    radial-gradient(58% 44% at 8% 92%,rgba(255,0,122,.1),transparent 60%)}
+  html[data-theme="dark"] body::before{background:
+    radial-gradient(52% 42% at 50% -8%,rgba(255,0,122,.12),transparent 64%),
+    radial-gradient(40% 34% at 92% 18%,rgba(255,0,122,.06),transparent 60%),
+    radial-gradient(58% 44% at 8% 92%,rgba(255,0,122,.05),transparent 60%)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px}
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .mono{font-family:'JetBrains Mono',monospace}
+
+  /* ── liquid glass nav ── */
+  header{position:sticky;top:0;z-index:40;padding:10px 0}
+  .glass{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:var(--r-float);
+    -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);
+    box-shadow:var(--float-sh),var(--glass-hl)}
+  .hrow{display:flex;align-items:center;gap:16px;height:64px;padding:0 10px 0 16px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;font-size:25px;letter-spacing:.5px}
+  .mark{font-family:'Inter',sans-serif;line-height:1;
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.85)) drop-shadow(0 3px 9px rgba(255,0,122,.5))}
+  html[data-theme="dark"] .mark{filter:drop-shadow(0 1px 0 rgba(255,255,255,.16)) drop-shadow(0 3px 12px rgba(255,0,122,.4))}
+  .logo .mark{font-size:32px}
+  .nav{display:flex;gap:2px;margin-left:8px}
+  .nav a{font-weight:600;font-size:14px;color:var(--sub);padding:8px 15px;border-radius:var(--r-pill);transition:.18s var(--ease)}
+  .nav a:hover{color:var(--ink);background:var(--track)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .btn{font-family:'Inter',sans-serif;font-weight:700;font-size:14.5px;border:none;border-radius:14px;padding:12px 22px;cursor:pointer;transition:transform .1s,box-shadow .18s var(--ease),background .18s;display:inline-flex;align-items:center;gap:8px}
+  .btn:active{transform:translateY(1px)}
+  .btn.lime{background:var(--accent);color:var(--accent-contrast);box-shadow:var(--btn-glow)}
+  .btn.lime:hover{background:var(--accent-hover);box-shadow:0 10px 30px rgba(255,0,122,.5)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line2)}
+  .btn.ghost:hover{background:var(--track)}
+  .icb{display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;background:var(--track);color:var(--ink);border:none;cursor:pointer;transition:.18s var(--ease);flex:none}
+  .icb:hover{background:var(--accent);color:var(--accent-contrast)}
+
+  /* ── hero ── */
+  .hero{text-align:center;padding:74px 0 40px}
+  .pill{display:inline-flex;align-items:center;gap:9px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#c40062;background:var(--accent-soft);border:1px solid rgba(255,0,122,.6);border-radius:var(--r-pill);padding:8px 17px}
+  html[data-theme="dark"] .pill{color:var(--accent);border-color:rgba(255,0,122,.28)}
+  .pill .d{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent)}
+  h1{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(40px,6.6vw,76px);letter-spacing:-1px;line-height:1.03;margin-top:22px}
+  h1 em{font-style:italic;color:#d6067f}
+  html[data-theme="dark"] h1 em{color:var(--accent)}
+  .lede{color:var(--sub);font-size:17.5px;max-width:680px;margin:22px auto 0;line-height:1.7}
+  .lede b{color:var(--ink);font-weight:600}
+  .cta{display:flex;gap:12px;justify-content:center;margin-top:34px;flex-wrap:wrap}
+  .btn.big{font-size:16.5px;padding:16px 34px;border-radius:16px}
+
+  /* ── live strip ── */
+  .strip{display:flex;background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--float-sh);margin-top:56px;overflow:hidden}
+  .cell{flex:1;padding:22px 26px;border-right:1px solid var(--line);text-align:center}
+  .cell:last-child{border-right:none}
+  .cell .l{font-size:10.5px;font-weight:700;color:var(--mut);letter-spacing:.11em;text-transform:uppercase}
+  .cell .v{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:34px;margin-top:6px;font-variant-numeric:tabular-nums}
+  .cell.hl .v{color:#d6067f}
+  html[data-theme="dark"] .cell.hl .v{color:var(--accent)}
+  @media(max-width:820px){.strip{flex-direction:column}.cell{border-right:none;border-bottom:1px solid var(--line)}}
+
+  /* ── pillars ── */
+  section{padding:38px 0}
+  .shead{text-align:center;margin-bottom:26px}
+  .shead h2{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(30px,4.2vw,42px);line-height:1.1}
+  .shead h2 em{font-style:italic;color:#d6067f}
+  html[data-theme="dark"] .shead h2 em{color:var(--accent)}
+  .shead p{color:var(--sub);font-size:15.5px;margin-top:12px;max-width:580px;margin-left:auto;margin-right:auto;line-height:1.65}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  @media(max-width:820px){.pillars{grid-template-columns:1fr}}
+  .p{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:30px;box-shadow:var(--sh);position:relative;overflow:hidden}
+  .p::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--accent)}
+  .p .n{font-size:10.5px;font-weight:700;letter-spacing:.18em;color:var(--mut)}
+  .p h3{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:27px;margin-top:12px}
+  .p p{color:var(--sub);font-size:14.5px;line-height:1.7;margin-top:12px}
+  .p p b{color:var(--ink);font-weight:600}
+  .p .go{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-weight:700;font-size:14px;color:#d6067f}
+  html[data-theme="dark"] .p .go{color:var(--accent)}
+
+  /* ── banner ── */
+  .rule{background:var(--banner-bg);border-radius:var(--r-float);padding:54px 40px;text-align:center;margin:26px 0;box-shadow:var(--float-sh)}
+  .rule h2{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(28px,4vw,46px);color:var(--banner-fg);line-height:1.1}
+  .rule h2 em{font-style:italic;color:var(--accent)}
+  .rule p{color:var(--banner-mut);font-size:15px;margin-top:16px;max-width:640px;margin-left:auto;margin-right:auto;line-height:1.7}
+  .rule .btn{margin-top:26px}
+  footer{border-top:1px solid var(--line);padding:34px 0;color:var(--mut);font-size:13px;text-align:center;background:var(--card)}
+  footer .fb{font-family:'Inter',sans-serif;font-size:20px;color:var(--ink);letter-spacing:1px;margin-bottom:7px}
+  footer a{color:var(--sub);text-decoration:underline}
+  footer .disc{margin-top:12px;font-size:11.5px;max-width:680px;margin-left:auto;margin-right:auto;line-height:1.65}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="glass hrow">
+  <div class="logo"><span class="mark">🦄</span>UNIC</div>
+  <nav class="nav">
+    <a href="/app">App</a>
+    <a href="/docs">Docs</a>
+    <a href="https://pools.trade" target="_blank" rel="noopener">pools.trade ↗</a>
+  </nav>
+  <div class="right">
+    <a class="btn lime" href="/app">Enter App →</a>
+    <button class="icb" id="themeBtn" type="button" aria-label="Toggle dark mode"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"/></svg></button>
+    <a class="icb" href="https://x.com/UnicReserve" target="_blank" rel="noopener" aria-label="UNIC on X"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+  </div>
+</div></div></header>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="pill"><span class="d"></span>The unicorn reserve · pools.trade · Robinhood Chain · (3,3)</span>
+    <h1>The reserve currency<br>in DeFi's favorite<br><em>shade of pink</em>.</h1>
+    <div class="lede">UNIC is an OHM-style reserve protocol launching on <b>pools.trade</b> — Uniswap's new launchpad on Robinhood Chain — wearing the color every DeFi degen already trusts. <b>Stake</b> $UNIC and your balance compounds every epoch, automatically. <b>Bond</b> ETH or USDC at a discount and grow the treasury that backs it. Same (3,3) engine that carried OHM to <b>$4B</b> — reborn as a unicorn.</div>
+    <div class="cta">
+      <a class="btn lime big" href="/app">Enter App →</a>
+      <a class="btn ghost big" href="/docs">Read the Docs</a>
+    </div>
+    <div class="strip">
+      <div class="cell hl"><div class="l">APY</div><div class="v num" id="sApy">—</div></div>
+      <div class="cell"><div class="l">Treasury</div><div class="v num" id="sTreasury">—</div></div>
+      <div class="cell"><div class="l">Total Staked</div><div class="v num" id="sStaked">—</div></div>
+      <div class="cell"><div class="l">Next Rebase</div><div class="v mono" id="sRebase">—</div></div>
+    </div>
+  </div>
+
+  <section>
+    <div class="shead"><h2>Stake. Bond. <em>(3,3)</em>.<br>The unicorn way.</h2>
+      <p>The classic (3,3) reserve design — staking, bonding, and a protocol-owned treasury — in the pink that built DeFi.</p></div>
+    <div class="pillars">
+      <div class="p"><div class="n">I · STAKE</div><h3>Get in</h3><p>Stake $UNIC, receive <b>sUNIC</b>, and watch it rebase upward every epoch — automatic, compounding, nothing to claim. The index only goes up, and your bag goes with it.</p><a class="go" href="/app">Start staking →</a></div>
+      <div class="p"><div class="n">II · BOND</div><h3>Feed the treasury</h3><p>Sell <b>ETH or USDC</b> to the protocol at a discount for vesting $UNIC. Every bond becomes <b>protocol-owned reserve</b> — the treasury that puts a floor under the horn.</p><a class="go" href="/app">Open a bond →</a></div>
+      <div class="p"><div class="n">III · (3,3)</div><h3>The game</h3><p>If everyone stakes, everyone wins — that is the whole game. Cooperate and the unicorn runs; defect and it's glue. (3,3) is the handshake, and pink is the uniform.</p><a class="go" href="/docs">How it works →</a></div>
+    </div>
+  </section>
+
+  <div class="rule">
+    <h2>Every chain gets a reserve currency.<br><em>This one got the unicorn.</em></h2>
+    <p>Rebase clock, bond marketplace and the staking calculator are one click away — connect any EVM wallet. The protocol is a simulation running on an off-chain ledger. It does not hold your funds, because it cannot: it never touches them.</p>
+    <a class="btn lime big" href="/app">Enter App →</a>
+  </div>
+</div>
+
+<footer>
+  <div class="fb"><span class="mark" style="font-size:19px">🦄</span> UNIC</div>
+  <div>the unicorn reserve · launching on <a href="https://pools.trade" target="_blank" rel="noopener">pools.trade</a> · Robinhood Chain · <a href="/app">App</a> · <a href="/docs">Docs</a></div>
+  <div class="disc">$UNIC is a game. Staking, rebases, bonds and the treasury are a <b>simulation</b> — an off-chain ledger, not a contract. Nothing here custodies your funds, nothing here is yield, and no return is promised or possible to promise. Not affiliated with Uniswap Labs. Do not put in money you want back.</div>
+</footer>
+
+<script>
+(function () {
+  // theme (defaults light, remembers the choice)
+  const btn = document.getElementById('themeBtn');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('unic_theme', t);
+    if (btn) btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  setTheme(localStorage.getItem('unic_theme') || 'light');
+  if (btn) btn.onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+
+  // live strip
+  (async function () {
+    try {
+      const m = await (await fetch('/api/metrics')).json();
+      const money = (n) => '$' + (n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : n.toFixed(0));
+      const tok = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : Math.round(n).toLocaleString();
+      document.getElementById('sApy').textContent = Math.round(m.apy).toLocaleString() + '%';
+      document.getElementById('sTreasury').textContent = money(m.treasury);
+      document.getElementById('sStaked').textContent = tok(m.totalStaked);
+      let next = m.nextRebaseIn;
+      setInterval(() => {
+        next = next > 0 ? next - 1 : m.rebaseSec;
+        const mm = Math.floor(next / 60), ss = Math.floor(next % 60);
+        document.getElementById('sRebase').textContent = mm + ':' + String(ss).padStart(2, '0');
+      }, 1000);
+    } catch (e) {}
+  })();
+})();
+</script>
+</body>
+</html>

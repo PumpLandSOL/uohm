@@ -1,0 +1,175 @@
+// UNIC (3,3) dashboard — metrics, live rebase, stake/bond/claim.
+// All state is the off-chain ledger in server/index.js. Nothing here touches a contract.
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let M = null, A = null, wallet = localStorage.getItem('unic_w') || '';
+  let anchor = null; // {index, nextIn, rate, rebaseSec, t, agons, totalAgons}
+  let stakeMode = 'stake';
+
+  const isW = (s) => /^0x[a-fA-F0-9]{40}$/.test(s);
+  const commas = (n, d) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  const money = (n) => '$' + (n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : n.toFixed(2));
+  const tok = (n) => n >= 1e6 ? (n / 1e6).toFixed(2) + 'M' : n >= 1e3 ? commas(n, 0) : commas(n, 2);
+  const pct = (n) => (n * 100).toLocaleString('en-US', { maximumFractionDigits: n < 0.01 ? 3 : 2 }) + '%';
+  const apyFmt = (n) => commas(n, 0) + '%';
+  function toast(t) { const e = $('toast'); e.textContent = t; e.style.display = 'block'; clearTimeout(e._t); e._t = setTimeout(() => e.style.display = 'none', 2400); }
+
+  // ---- theme (defaults light, remembers the choice) ----
+  const themeBtn = $('themeBtn');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('unic_theme', t);
+    if (themeBtn) themeBtn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  setTheme(localStorage.getItem('unic_theme') || 'light');
+  if (themeBtn) themeBtn.onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+
+  // ---- views ----
+  document.querySelectorAll('.tab').forEach((t) => t.addEventListener('click', () => {
+    if (!t.dataset.view) return; // /docs is a real link
+    document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === t));
+    ['dash', 'stake', 'bond', 'calc'].forEach((v) => $(v).classList.toggle('hide', v !== t.dataset.view));
+  }));
+
+  // ---- wallet (EVM connect via injected provider) ----
+  const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
+  function renderWallet() {
+    const b = $('connectBtn');
+    if (wallet) { b.textContent = short(wallet); b.classList.add('connected'); b.classList.remove('primary'); b.title = 'Disconnect'; }
+    else { b.textContent = 'Connect Wallet'; b.classList.remove('connected'); b.classList.add('primary'); b.title = ''; }
+  }
+  function setWallet(a) {
+    if (a && isW(a)) { wallet = a; localStorage.setItem('unic_w', a); renderWallet(); loadAccount(); }
+    else { wallet = ''; A = null; localStorage.removeItem('unic_w'); renderWallet(); ['yStaked', 'yBalance', 'yNext'].forEach((id) => $(id).textContent = '—'); renderYourBonds(); }
+  }
+  $('connectBtn').onclick = async () => {
+    if (wallet) { setWallet(''); toast('Wallet disconnected'); return; }
+    const eth = window.ethereum;
+    if (!eth) return toast('No EVM wallet found — install MetaMask or Rabby');
+    try {
+      const acc = await eth.request({ method: 'eth_requestAccounts' });
+      if (acc && acc[0] && isW(acc[0])) { setWallet(acc[0]); toast('Connected ' + short(acc[0]) + ' (3,3)'); }
+      else toast('No account returned');
+    } catch (e) { toast('Connection rejected'); }
+  };
+  if (window.ethereum && window.ethereum.on) window.ethereum.on('accountsChanged', (acc) => { setWallet(acc && acc[0]); });
+  renderWallet();
+
+  // ---- fetch ----
+  async function loadMetrics() { try { M = await (await fetch('/api/metrics')).json(); reanchor(); renderMetrics(); renderBonds(); } catch (e) {} }
+  async function loadAccount() { if (!isW(wallet)) return; try { A = await (await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet }) })).json(); reanchor(); renderAccount(); } catch (e) {} }
+  function reanchor() {
+    if (!M) return;
+    anchor = { index: M.index, nextIn: M.nextRebaseIn, rate: M.rate, rebaseSec: M.rebaseSec, t: Date.now(),
+      agons: A && A.staked ? A.staked / A.index : 0, totalAgons: M.totalStaked / M.index, treasury: M.treasury, totalStaked: M.totalStaked, price: M.price };
+  }
+  function liveIndex() {
+    if (!anchor) return { index: 1, nextIn: 0 };
+    let idx = anchor.index; let nextIn = anchor.nextIn - (Date.now() - anchor.t) / 1000;
+    let guard = 0; while (nextIn < 0 && guard++ < 50) { idx *= (1 + anchor.rate); nextIn += anchor.rebaseSec; }
+    const frac = 1 - nextIn / anchor.rebaseSec;
+    return { index: idx * (1 + anchor.rate * frac), nextIn };
+  }
+
+  // ---- render ----
+  function renderMetrics() {
+    if (!M) return;
+    $('mApy').textContent = apyFmt(M.apy);
+    $('mTreasury').textContent = money(M.treasury);
+    $('mBacking').textContent = 'backing $' + M.backingPerToken.toFixed(6) + ' / $UNIC';
+    $('mPrice').textContent = '$' + M.price.toFixed(4);
+    $('mMc').textContent = 'mcap ' + money(M.marketCap);
+    $('mRatio').textContent = pct(M.stakingRatio) + ' of supply';
+    $('mRunway').textContent = M.runwayDays == null ? '—'
+      : M.runwayDays >= 365 ? (M.runwayDays / 365).toFixed(1) + ' yr'
+      : Math.round(M.runwayDays) + ' days';
+    $('mEpoch').textContent = M.epoch;
+    $('yApy').textContent = apyFmt(M.apy);
+    const roi = (days) => Math.pow(1 + M.rate, days * 86400 / M.rebaseSec) - 1;
+    $('yRoi5').textContent = pct(roi(5)); $('yRoi7').textContent = pct(roi(7)); $('yRoi30').textContent = pct(roi(30)); $('yRoi1y').textContent = apyFmt(M.apy);
+    // top stakers
+    if (M.leaderboard && M.leaderboard.length) {
+      $('lbPanel').style.display = 'block';
+      $('lbRows').innerHTML = M.leaderboard.map((b, i) => `<div class="row"><span>${i + 1}. <b class="cd">${b.wallet}</b></span><span><b class="tl">${tok(b.staked)} sUNIC</b> <span style="color:var(--mut)">· ${pct(b.share)}</span></span></div>`).join('');
+    }
+    calc();
+    if (M.mint) { const bar = $('ca'); bar.style.display = 'flex'; $('caV').textContent = M.mint.slice(0, 6) + '…' + M.mint.slice(-4); bar.href = 'https://pools.trade'; $('caCopy').onclick = (e) => { e.preventDefault(); navigator.clipboard && navigator.clipboard.writeText(M.mint); $('caCopy').textContent = 'Copied'; setTimeout(() => $('caCopy').textContent = 'Copy', 1200); }; }
+  }
+  function renderAccount() {
+    if (!A) return;
+    $('yBalance').textContent = tok(A.balance) + ' $UNIC';
+    $('yNext').textContent = '+' + (A.staked * M.rate).toFixed(4) + ' $UNIC';
+  }
+  function renderBonds() {
+    if (!M) return;
+    $('bondCards').innerHTML = M.bonds.map((b) => `
+      <div class="bond"><h3>${b.name}</h3>
+        <div class="disc">${(b.discount * 100).toFixed(1)}%</div><div class="dl">discount · ${b.vestDays}-day vest</div>
+        <div class="br"><span>Bond price</span><b>$${b.price.toFixed(4)}</b></div>
+        <div class="br"><span>Discount vs market</span><b style="color:var(--success)">+${(b.discount * 100).toFixed(1)}%</b></div>
+        <div class="bf"><input id="bondAmt_${b.id}" type="text" inputmode="decimal" placeholder="$ amount"><button data-bond="${b.id}">Bond</button></div>
+      </div>`).join('');
+    $('bondCards').querySelectorAll('[data-bond]').forEach((btn) => btn.addEventListener('click', () => doBond(btn.dataset.bond)));
+  }
+  function renderYourBonds() {
+    if (!A) { $('yourBonds').innerHTML = '<div class="psub">Connect your wallet to see your bonds.</div>'; return; }
+    if (!A.bonds || !A.bonds.length) { $('yourBonds').innerHTML = '<div class="psub">No active bonds.</div>'; return; }
+    $('yourBonds').innerHTML = A.bonds.map((b) => `
+      <div class="yb"><span>${b.market} · <b>${tok(b.payout)}</b> $UNIC</span>
+        <div class="prog"><i style="width:${(b.pct * 100).toFixed(0)}%"></i></div>
+        <span class="tl"><b>${tok(b.claimable)}</b> claimable</span></div>`).join('') +
+      `<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="claimBtn">Claim</button><button class="btn primary" id="claimStakeBtn">Claim &amp; Stake</button></div>`;
+    const cb = $('claimBtn'), cs = $('claimStakeBtn'); if (cb) cb.onclick = () => doClaim(false); if (cs) cs.onclick = () => doClaim(true);
+  }
+
+  // ---- actions ----
+  $('segStake').onclick = () => { stakeMode = 'stake'; $('segStake').classList.add('on'); $('segUnstake').classList.remove('on'); $('stakeBtn').textContent = 'Stake'; };
+  $('segUnstake').onclick = () => { stakeMode = 'unstake'; $('segUnstake').classList.add('on'); $('segStake').classList.remove('on'); $('stakeBtn').textContent = 'Unstake'; };
+  $('stakeMax').onclick = () => { if (!A) return; $('stakeAmt').value = (stakeMode === 'stake' ? A.balance : A.staked).toFixed(2); };
+  $('stakeBtn').onclick = async () => {
+    if (!isW(wallet)) return toast('connect your wallet first');
+    const amt = parseFloat($('stakeAmt').value); if (!(amt > 0)) return toast('enter an amount');
+    const r = await post('/api/' + stakeMode, { wallet, amount: amt });
+    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); $('stakeAmt').value = ''; toast((stakeMode === 'stake' ? 'Staked ' : 'Unstaked ') + tok(amt) + ' $UNIC (3,3)');
+  };
+  async function doBond(id) {
+    if (!isW(wallet)) return toast('connect your wallet first');
+    const amt = parseFloat(($('bondAmt_' + id) || {}).value); if (!(amt > 0)) return toast('enter an amount');
+    const r = await post('/api/bond', { wallet, market: id, amount: amt });
+    if (r.error) return toast(r.error); A = r; renderYourBonds(); loadMetrics(); $('bondAmt_' + id).value = ''; toast('Bonded — ' + tok(r.payout) + ' $UNIC vesting');
+  }
+  async function doClaim(autostake) {
+    const r = await post('/api/claim', { wallet, autostake });
+    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); renderYourBonds(); toast(autostake ? 'Claimed & staked ' + tok(r.claimed) : 'Claimed ' + tok(r.claimed) + ' $UNIC');
+  }
+  async function post(url, b) { try { return await (await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); } catch (e) { return { error: 'request failed' }; } }
+
+  // ---- live tick (setInterval, not rAF: rAF is throttled/dead in embedded panes) ----
+  function tick() {
+    if (!anchor || !M) return;
+    const li = liveIndex();
+    const cd = Math.max(0, li.nextIn); const mm = Math.floor(cd / 60), ss = Math.floor(cd % 60);
+    const cds = mm + ':' + String(ss).padStart(2, '0');
+    $('mRebase').textContent = cds; $('yRebase').textContent = cds;
+    $('mIndex').textContent = li.index.toFixed(5);
+    const ratio = li.index / anchor.index;
+    $('mStaked').textContent = tok(anchor.totalStaked * ratio) + ' sUNIC';
+    if (A && anchor.agons) { $('yStaked').textContent = (anchor.agons * li.index).toFixed(4) + ' sUNIC'; }
+    else if (A) $('yStaked').textContent = '0.0000 sUNIC';
+  }
+  // ---- calculator ----
+  function calc() {
+    if (!M) return; const amt = parseFloat($('calcAmt').value) || 0; const days = +$('calcDays').value;
+    $('calcDaysL').textContent = days; $('calcPrice').textContent = M.price.toFixed(4);
+    const out = amt * Math.pow(1 + M.rate, days * 86400 / M.rebaseSec);
+    $('calcOut').textContent = tok(out) + ' $UNIC';
+    $('calcMult').textContent = (out / (amt || 1)).toFixed(1) + '× your stake';
+    $('calcUsd').textContent = money(out * M.price);
+    $('calcProfit').textContent = '+' + money((out - amt) * M.price);
+  }
+  $('calcAmt').addEventListener('input', calc); $('calcDays').addEventListener('input', calc);
+
+  loadMetrics(); if (wallet) loadAccount();
+  setInterval(loadMetrics, 6000); setInterval(() => { if (wallet) { loadAccount(); renderYourBonds(); } }, 6000);
+  renderYourBonds(); setInterval(tick, 100); tick();
+})();

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Docs — UNIC · the unicorn reserve · (3,3) · pools.trade</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --accent:#FF007A;--accent-hover:#e5006e;--accent-soft:#ffe3f1;--accent-mid:#ffc2de;--accent-contrast:#fff;
+    --bg:#fdf6fa;--card:#fff;--panel:#f7f7f7;
+    --ink:#111;--sub:rgba(17,17,17,.62);--mut:rgba(17,17,17,.42);
+    --line:rgba(17,17,17,.1);--line2:rgba(17,17,17,.16);
+    --lime-ink:#c40062;--amb:#c98a00;--red:#ff3b30;
+    --glass-fill:rgba(255,255,255,.7);--glass-border:rgba(255,255,255,.82);
+    --float-sh:0 1px 2px rgba(17,17,17,.04),0 8px 24px rgba(17,17,17,.06);
+    --r:16px;--ease:cubic-bezier(.22,1,.36,1)}
+  html[data-theme="dark"]{
+    --bg:#0d0d0d;--card:#161616;--panel:#1c1c1c;
+    --ink:#f2f2f2;--sub:rgba(242,242,242,.62);--mut:rgba(242,242,242,.42);
+    --line:rgba(242,242,242,.12);--line2:rgba(242,242,242,.2);
+    --accent-soft:#2b0a1c;--accent-mid:#43102b;--lime-ink:#FF007A;--amb:#ffce5a;--red:#ff453a;
+    --glass-fill:rgba(22,22,22,.78);--glass-border:rgba(255,255,255,.1);
+    --float-sh:0 1px 2px rgba(0,0,0,.35),0 8px 24px rgba(0,0,0,.35)}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden;transition:background .28s var(--ease),color .28s var(--ease)}
+  body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+    radial-gradient(55% 45% at 15% 0%,rgba(255,0,122,.22),transparent 60%),
+    radial-gradient(50% 45% at 85% 5%,rgba(255,0,122,.14),transparent 60%),
+    radial-gradient(60% 50% at 50% 112%,rgba(255,0,122,.08),transparent 70%)}
+  html[data-theme="dark"] body::before{background:
+    radial-gradient(55% 45% at 15% 0%,rgba(255,0,122,.1),transparent 60%),
+    radial-gradient(50% 45% at 85% 5%,rgba(255,0,122,.06),transparent 60%)}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+  .grad{color:var(--lime-ink)}
+  .mono{font-family:'JetBrains Mono',monospace}
+  .tok{color:var(--lime-ink);font-weight:600}
+
+  header{position:sticky;top:0;z-index:40;padding:10px 0}
+  .glass{background:var(--glass-fill);border:1px solid var(--glass-border);border-radius:28px;
+    -webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);box-shadow:var(--float-sh)}
+  .hrow{display:flex;align-items:center;gap:16px;height:62px;padding:0 10px 0 16px}
+  .logo{display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;font-size:24px;letter-spacing:.5px}
+  .mark{font-family:'Inter',sans-serif;line-height:1;font-size:30px;
+    filter:drop-shadow(0 1px 0 rgba(255,255,255,.85)) drop-shadow(0 3px 9px rgba(255,0,122,.5))}
+  html[data-theme="dark"] .mark{filter:drop-shadow(0 1px 0 rgba(255,255,255,.16)) drop-shadow(0 3px 12px rgba(255,0,122,.4))}
+  .tabs{display:flex;gap:2px;margin-left:8px}
+  .tab{font-weight:600;font-size:14px;color:var(--sub);padding:8px 15px;border-radius:999px;cursor:pointer;transition:.18s var(--ease)}
+  .tab.on{color:var(--accent-contrast);background:var(--accent)}
+  .tab:hover:not(.on){color:var(--ink)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .icb{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:rgba(17,17,17,.06);color:var(--ink);border:none;cursor:pointer;transition:.18s var(--ease)}
+  html[data-theme="dark"] .icb{background:rgba(242,242,242,.1)}
+  .icb:hover{background:var(--accent);color:var(--accent-contrast)}
+
+  .docs{display:grid;grid-template-columns:230px 1fr;gap:34px;padding:34px 0 60px}
+  @media(max-width:880px){.docs{grid-template-columns:1fr}.toc{position:static!important;max-height:none!important}}
+  .toc{position:sticky;top:92px;align-self:start;max-height:calc(100vh - 120px);overflow:auto}
+  .toc .h{font-weight:700;font-size:11px;letter-spacing:.14em;color:var(--mut);text-transform:uppercase;margin-bottom:10px}
+  .toc a{display:block;font-size:13.5px;color:var(--sub);padding:6px 10px;border-left:2px solid var(--line);transition:color .12s,border-color .12s}
+  .toc a:hover{color:var(--ink);border-left-color:var(--accent)}
+  .toc a.sub2{padding-left:22px;font-size:12.5px;color:var(--mut)}
+  .toc a:hover.sub2{color:var(--sub)}
+
+  .doc h1{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:clamp(30px,4.4vw,46px);letter-spacing:-.5px;line-height:1.08;margin:8px 0 8px}
+  .doc .lede{color:var(--sub);font-size:16px;line-height:1.7;max-width:660px}
+  .doc .lede b{color:var(--ink);font-weight:600}
+  .doc h2{font-family:'Inter',sans-serif;font-weight:800;letter-spacing:-.02em;font-size:29px;letter-spacing:-.2px;margin:46px 0 6px;padding-top:20px;border-top:1px solid var(--line)}
+  .doc h3{font-weight:700;font-size:16px;margin:26px 0 4px}
+  .doc p{color:var(--sub);font-size:14.5px;line-height:1.75;margin-top:10px;max-width:700px}
+  .doc p b,.doc li b{color:var(--ink);font-weight:600}
+  .doc ul,.doc ol{margin:10px 0 0 20px;max-width:680px}
+  .doc li{color:var(--sub);font-size:14.5px;line-height:1.75;margin-top:6px}
+  .kicker{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--lime-ink);background:var(--accent-soft);border:1px solid rgba(255,0,122,.5);border-radius:999px;padding:6px 14px;margin-top:26px}
+  html[data-theme="dark"] .kicker{border-color:rgba(255,0,122,.28)}
+  .formula{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--lime-ink);margin-top:14px;overflow-x:auto;white-space:pre;line-height:1.8;max-width:700px}
+  .callout{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 12px 12px 0;padding:14px 18px;margin-top:14px;max-width:700px}
+  .callout p{margin-top:0;font-size:13.5px}
+  .callout.warn{border-left-color:var(--amb)}
+  .callout.warn .cl{color:var(--amb)}
+  .callout.stop{border-left-color:var(--red)}
+  .callout.stop .cl{color:var(--red)}
+  .callout .cl{font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--lime-ink);display:block;margin-bottom:6px}
+  table{border-collapse:collapse;margin-top:14px;width:100%;max-width:700px;font-size:13.5px}
+  th{font-weight:600;font-size:11.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);text-align:left;padding:8px 12px;border-bottom:1px solid var(--line2)}
+  td{color:var(--sub);padding:9px 12px;border-bottom:1px solid var(--line);line-height:1.5}
+  td:first-child{color:var(--ink);font-weight:500}
+  td .mono,th .mono{font-size:12.5px}
+  .mx{display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;max-width:520px;margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:13px;text-align:center}
+  .mx .h{font-weight:600;font-size:12px;color:var(--mut);align-self:center;font-family:'Inter',sans-serif}
+  .mx .c{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 6px}
+  .mx .c.best{border-color:rgba(255,0,122,.6);color:var(--lime-ink);background:var(--accent-soft)}
+  .mx .c.worst{border-color:rgba(255,59,48,.4);color:var(--red)}
+  footer{border-top:1px solid var(--line);padding:30px 0;margin-top:26px;color:var(--mut);font-size:12.5px;text-align:center;background:var(--card)}
+  footer .fbrand{display:inline-flex;align-items:center;gap:9px;margin-bottom:9px}
+  footer .fbrand .nm{font-family:'Inter',sans-serif;font-size:17px;letter-spacing:.1em;color:var(--ink)}
+  footer .disc{margin-top:12px;font-size:11.5px;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.65}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="glass hrow">
+  <a class="logo" href="/"><span class="mark">🦄</span>UNIC</a>
+  <div class="tabs">
+    <a class="tab" href="/app">App</a>
+    <a class="tab on" href="/docs">Docs</a>
+  </div>
+  <div class="right">
+    <button class="icb" id="themeBtn" type="button" aria-label="Toggle dark mode"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"/></svg></button>
+    <a class="icb" href="https://x.com/UnicReserve" target="_blank" rel="noopener" aria-label="UNIC on X"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+  </div>
+</div></div></header>
+
+<div class="wrap docs">
+  <nav class="toc">
+    <div class="h">Documentation</div>
+    <a href="#overview">Overview</a>
+    <a href="#name">Why the unicorn</a>
+    <a href="#33">The (3,3) game</a>
+    <a href="#staking">Staking</a>
+    <a href="#staking-rebase" class="sub2">Rebases &amp; epochs</a>
+    <a href="#staking-index" class="sub2">The index &amp; sUNIC</a>
+    <a href="#staking-apy" class="sub2">APY math</a>
+    <a href="#bonding">Bonding</a>
+    <a href="#bonding-markets" class="sub2">Markets &amp; discounts</a>
+    <a href="#bonding-vesting" class="sub2">Vesting &amp; claiming</a>
+    <a href="#treasury">Treasury &amp; backing</a>
+    <a href="#metrics">Metrics glossary</a>
+    <a href="#token">The $UNIC token</a>
+    <a href="#architecture">What is real and what is simulated</a>
+    <a href="#risks">Risks &amp; honest answers</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+
+  <main class="doc">
+    <span class="kicker">🦄 Documentation · UNIC · $UNIC</span>
+    <h1 id="overview">The reserve currency in <span class="grad">DeFi’s favorite pink</span></h1>
+    <p class="lede">UNIC is an OHM-style reserve protocol launching on <b>pools.trade</b>, Uniswap's new launchpad on Robinhood Chain. Holders <b>stake</b> to compound their balance every epoch, or <b>bond</b> to buy $UNIC below market price while growing the protocol treasury. Mechanically it is the design OHM pioneered — rebuilt under the unicorn, in the pink that built DeFi.</p>
+
+    <p>The protocol has three moving parts, and every page of the app maps to one of them:</p>
+    <ul>
+      <li><b>Stake</b> — lock $UNIC, receive <b>sUNIC</b>, and watch the balance rebase upward every epoch, automatically.</li>
+      <li><b>Bond</b> — sell ETH, liquidity, or USDC to the protocol for discounted $UNIC that vests over days. Bond payments are what fill the treasury.</li>
+      <li><b>Treasury</b> — the pool of assets the protocol tracks as backing. It is what puts a floor of stated value behind the token.</li>
+    </ul>
+
+    <h2 id="name">Why the unicorn</h2>
+    <p>Uniswap's unicorn and its pink are the most recognizable brand in DeFi — and with <b>pools.trade</b>, Uniswap brought a launchpad to Robinhood Chain. UNIC is the reserve currency for that moment: the classic (3,3) design, launched where the unicorn lives, in the color everyone already knows. $UNIC, staked, becomes <b>sUNIC</b>; bonds fill a treasury; the treasury backs the token.</p>
+    <p><b>Honesty is still the brand here.</b> The (3,3) reserve design pays "yield" in emissions, not revenue, and depends on inflows to sustain the dashboard. Everything below explains exactly how the machine works, so that riding the unicorn is a fully informed choice.</p>
+    <div class="callout stop"><span class="cl">Read this first</span><p>$UNIC is a game. Do not put in money you want back. Nothing here is yield, investment, or advice, and no return is promised — the model cannot promise one. Not affiliated with Uniswap Labs or Robinhood.</p></div>
+
+    <h2 id="33">The (3,3) game</h2>
+    <p>(3,3) is the game-theory shorthand OHM made famous. Model the protocol as a two-player game where each player can either <b>stake</b> or <b>sell</b>, and score the outcomes:</p>
+    <div class="mx">
+      <div class="h"></div><div class="h">They stake</div><div class="h">They sell</div>
+      <div class="h">You stake</div><div class="c best">(3,3)</div><div class="c">(1,-1)</div>
+      <div class="h">You sell</div><div class="c">(-1,1)</div><div class="c worst">(-3,-3)</div>
+    </div>
+    <p>If everyone stakes, supply comes off the market, the treasury keeps compounding, and both players capture the maximum payoff — <b>(3,3)</b>. If everyone sells, both eat the downside — <b>(-3,-3)</b>. Staking looks like the dominant cooperative strategy, which is why "(3,3)" became the handshake.</p>
+    <div class="callout warn"><span class="cl">The part the matrix hides</span><p>The matrix scores a single simultaneous round. Real markets are sequential, and in a sequential version the first defector scores best of all. "If everyone stakes, everyone wins" and "whoever sells first wins" are both true, and that unresolved tension is the whole risk. Nobody ever engineered it away. See <a href="#risks" style="color:var(--lime-ink)">Risks</a>.</p></div>
+
+    <h2 id="staking">Staking</h2>
+    <p>Staking is the primary strategy. You deposit $UNIC and receive <b>sUNIC</b> 1:1 at the current index. From that moment your sUNIC balance <b>rebases up every epoch</b> — no claiming, no re-staking. Compounding is automatic and continuous. Note precisely what grows: your <b>token count</b>. Whether that is worth more depends entirely on price, which the rebase does nothing to support.</p>
+
+    <h3 id="staking-rebase">Rebases &amp; epochs</h3>
+    <p>An <b>epoch</b> is the protocol's heartbeat: every <b>5 minutes</b>, a rebase fires and every staked balance grows by the per-epoch reward rate. The dashboard's <b>Next Rebase</b> tile counts down live, and the <b>epoch number</b> ticks up each time. Your share of the pool never changes from a rebase; the whole pool inflates together.</p>
+
+    <h3 id="staking-index">The index &amp; sUNIC</h3>
+    <p>The <b>current index</b> tracks cumulative rebase growth since epoch 0. It starts at 1.0 and compounds by the reward rate every epoch. Your position is stored as a fixed number of underlying units; your visible sUNIC balance is those units times the index:</p>
+    <div class="formula">index(n)        = (1 + rate)^n           n = epochs since genesis
+balance         = units × index          grows every rebase
+sUNIC ⇄ $UNIC = always 1:1 at unstake</div>
+    <p>Because the index only ever multiplies upward, it is a number that can only go up — which is exactly why it is a poor proxy for whether you are making money. The index rising and your position gaining value are two different events that fork markets routinely confuse on purpose.</p>
+
+    <h3 id="staking-apy">APY math</h3>
+    <p>The headline APY is the annualized result of compounding the per-epoch rate across a year. With a 5-minute epoch there are <span class="mono">105,192</span> rebases per year:</p>
+    <div class="formula">rate  = (1 + APY)^(1/105192) − 1       per-rebase reward yield
+APY   = (1 + rate)^105192 − 1          annualized, auto-compounded
+
+at APY = 50,000%:  rate ≈ 0.00591% per rebase
+ROI(5-day) ≈ 8.9%   ROI(30-day) ≈ 66.6%   (in TOKENS, not value)</div>
+    <div class="callout warn"><span class="cl">APY is a dilution rate wearing a costume</span><p>A 50,000% APY means the supply held by stakers grows 500× in a year. That is the emission rate of the token, printed as if it were a return. It is not fixed, not guaranteed, and paying it requires the supply to balloon — which is the opposite of scarcity. The calculator projects tokens; it cannot project price, and it will never tell you the price fell faster than the count rose. That case is the normal one.</p></div>
+
+    <h2 id="bonding">Bonding</h2>
+    <p>Bonding is the supply mechanism and the treasury's only source of growth. Instead of buying $UNIC on the market, you sell assets <b>to the protocol</b> and receive $UNIC at a <b>discount</b>, in exchange for a short vest. Every bond payment goes into the treasury. This is the one part of the design that is straightforwardly honest: real assets in, backing goes up.</p>
+
+    <h3 id="bonding-markets">Markets &amp; discounts</h3>
+    <table>
+      <tr><th>Market</th><th>Discount</th><th>Vest</th><th>What it gives the treasury</th></tr>
+      <tr><td>ETH</td><td class="mono grad">6.5%</td><td>5 days</td><td>Hard reserve asset</td></tr>
+      <tr><td>UNIC-ETH LP</td><td class="mono grad">13.0%</td><td>5 days</td><td>Protocol-owned liquidity the treasury controls</td></tr>
+      <tr><td>USDC</td><td class="mono grad">4.0%</td><td>5 days</td><td>Stable reserve backing</td></tr>
+    </table>
+    <div class="formula">bond price = market price × (1 − discount)
+payout     = amount paid ÷ bond price         in $UNIC, vests linearly</div>
+
+    <h3 id="bonding-vesting">Vesting &amp; claiming</h3>
+    <p>Bond payouts vest <b>linearly over 5 days</b> — at any moment you can claim exactly the vested fraction. The Bond page tracks each active bond with a progress bar and a live claimable amount. Two buttons:</p>
+    <ul>
+      <li><b>Claim</b> — move vested $UNIC to your wallet balance.</li>
+      <li><b>Claim &amp; Stake</b> — claim and stake in one motion. The (3,3) move.</li>
+    </ul>
+
+    <h2 id="treasury">Treasury &amp; backing</h2>
+    <p>The treasury is the protocol's balance sheet: every bond payment accumulates there. It does two jobs:</p>
+    <ul>
+      <li><b>Funds emissions.</b> Rewards are paid from a finite reserve. The <b>Runway</b> metric shows how many days the treasury can sustain current emissions — it lengthens as bonds fill it and shortens as more supply stakes.</li>
+      <li><b>Backs the token.</b> <b>Backing per token</b> = treasury ÷ circulating supply. It is a stated floor, not a peg and not a promise — price trades below backing all the time.</li>
+    </ul>
+    <div class="formula">backing / token = treasury ÷ circulating supply
+runway (days)   = treasury ÷ (daily reward emissions × price)</div>
+
+    <h2 id="metrics">Metrics glossary</h2>
+    <table>
+      <tr><th>Metric</th><th>Definition</th></tr>
+      <tr><td>APY</td><td>Annualized token-count growth at the current per-rebase rate, compounded across 105,192 epochs/year. A dilution rate. Variable.</td></tr>
+      <tr><td>Treasury Balance</td><td>Value the ledger tracks as protocol-owned, accumulated from bond sales.</td></tr>
+      <tr><td>Next Rebase</td><td>Live countdown to the next epoch (every 5 minutes).</td></tr>
+      <tr><td>$UNIC Price</td><td>Reference price per token; drives market cap and bond pricing.</td></tr>
+      <tr><td>Total Staked</td><td>All sUNIC currently staking, with the % of circulating supply it represents.</td></tr>
+      <tr><td>Current Index</td><td>Cumulative rebase growth since epoch 0 — a number that only goes up.</td></tr>
+      <tr><td>Runway</td><td>Days the treasury can fund current emissions if nothing else changes.</td></tr>
+      <tr><td>Backing</td><td>Treasury value ÷ circulating supply — the stated asset floor per token.</td></tr>
+    </table>
+
+    <h2 id="token">The $UNIC token</h2>
+    <table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td>Ticker</td><td class="mono">$UNIC</td></tr>
+      <tr><td>Staked form</td><td class="mono">sUNIC (rebasing, in the ledger)</td></tr>
+      <tr><td>Launchpad</td><td>pools.trade · Uniswap's launchpad</td></tr>
+      <tr><td>Chain</td><td>Robinhood Chain (EVM — <span class="mono">0x</span> addresses)</td></tr>
+      <tr><td>Supply</td><td class="mono">Fixed at launch</td></tr>
+      <tr><td>Contract address</td><td>Published on the app's CA bar at launch</td></tr>
+    </table>
+    <p>When the token goes live on pools.trade, the contract address appears in the app with a one-click copy button. Anything not shown there is not the token — <b>verify the CA against the app before you buy anything</b>.</p>
+
+    <h2 id="architecture">What is real and what is simulated</h2>
+    <p>This is the section every other fork should have written and didn't. UNIC is deliberately unambiguous about which parts touch a blockchain:</p>
+    <ul>
+      <li><b>Real:</b> the $UNIC token itself. It is a standard <b>fixed-supply</b> token launched via pools.trade on Robinhood Chain. You can buy and sell it. That is the only on-chain object in this project.</li>
+      <li><b>Simulated:</b> everything else. Staking, sUNIC, rebases, the index, bonds, vesting, the treasury and every APY figure live in an <b>off-chain ledger</b> keyed to your wallet address. Because the supply is fixed at launch, there is <b>no mint authority</b> — the protocol literally cannot emit new tokens on-chain, so the rebase is a number in a database, by necessity.</li>
+      <li><b>No custody, ever.</b> The app reads your <span class="mono">0x</span> address. It never asks you to sign, approve, or deposit. It cannot drain a wallet it never touches. "Bonding" moves no real ETH; it credits the simulation.</li>
+    </ul>
+    <p>The rebase engine is exact: the index catches up deterministically across any gap, so the same <span class="mono">(1 + rate)^n</span> produces the same number for everyone. It is honest arithmetic on an admittedly fictional quantity.</p>
+    <p><b>Don't take our word for any of it.</b> The whole protocol is about 100 lines of dependency-free Node in one file — read the source and check every claim on this page yourself. There is no contract call in it, because there is no contract. A protocol that asks for your trust and won't show you the code has told you something.</p>
+    <div class="callout"><span class="cl">In one sentence</span><p>The token is real; the yield machine is a playable simulation of one; and UNIC is the only place that puts that sentence in the docs instead of hoping you never ask.</p></div>
+
+    <h2 id="risks">Risks &amp; honest answers</h2>
+    <p>Reserve protocols print spectacular numbers. Here is the quiet part, out loud:</p>
+    <ul>
+      <li><b>High APY is a dilution schedule, not income.</b> Your token count grows; the value of each token depends entirely on the market. Every OHM fork's APY decayed, and most of the tokens went to near zero. Assume this one does too.</li>
+      <li><b>Backing is a stated floor, not a peg.</b> Price trades below backing in stress. Nothing buys back at any level.</li>
+      <li><b>(3,3) is a coordination story with a known ending.</b> OHM reached ~$4B and fell ~99%. Wonderland reached ~$2B and unwound amid the 0xSifu revelation. The design is the same one you are looking at.</li>
+      <li><b>The rewards need new buyers.</b> That is the resemblance the name points at. When inflows stop, the numbers on the dashboard stop meaning anything a seller can realize.</li>
+      <li><b>It is a game you can lose money on.</b> The pink is real; so is the downside. Liking the unicorn is not a hedge.</li>
+    </ul>
+
+    <h2 id="faq">FAQ</h2>
+    <h3>Is this affiliated with Uniswap?</h3>
+    <p>No. UNIC is an independent community project themed after the unicorn and launched through <b>pools.trade</b>, Uniswap's launchpad on Robinhood Chain. The staking/bond/treasury machinery is a simulation — an off-chain ledger that holds no funds. The one real thing is a fixed-supply token named $UNIC.</p>
+    <h3>Do I need to claim my staking rewards?</h3>
+    <p>No. Rebases compound into your sUNIC balance automatically, every epoch. The only claiming is for <b>bond</b> payouts as they vest.</p>
+    <h3>Can I unstake at any time?</h3>
+    <p>Yes — instantly, in the ledger, 1:1 at the current index, no cooldown, no fee.</p>
+    <h3>Where does the yield come from?</h3>
+    <p>There is no yield. There is an emission schedule funded by a simulated treasury that bonds fill. No lending desk, no strategy, no external revenue — just the reserve, the schedule, and the runway number telling you how long the story lasts.</p>
+    <h3>Which wallet do I use?</h3>
+    <p>Any EVM wallet — MetaMask, Rabby, or any injected <span class="mono">0x</span> provider. Hit <b>Connect Wallet</b>; the app only reads your address and never asks you to sign anything.</p>
+    <h3>When is the token live?</h3>
+    <p>The contract address appears in the app the moment $UNIC launches on pools.trade, with a copy button. Follow <a href="https://x.com/UnicReserve" target="_blank" rel="noopener" style="color:var(--lime-ink)">@UnicReserve</a> for the announcement, and trust only the CA shown in the app.</p>
+
+    <div class="callout" style="margin-top:40px"><span class="cl">🦄 · (3,3)</span><p>Stake $UNIC. Earn the rebase. Ride the unicorn. — <a href="/app" style="color:var(--lime-ink)">open the app</a></p></div>
+  </main>
+</div>
+
+<footer>
+  <div class="fbrand"><span class="mark" style="font-size:19px">🦄</span><span class="nm">UNIC</span></div>
+  <div>(3,3) · the unicorn reserve · launching on <a href="https://pools.trade" target="_blank" rel="noopener" style="color:var(--sub)">pools.trade</a> · Robinhood Chain · <a href="/app" style="color:var(--sub)">App</a></div>
+  <div class="disc">$UNIC is a game. Staking, rebases, bonds and the treasury are a simulation — an off-chain ledger, not a contract. Nothing here custodies your funds, nothing here is yield, and no return is promised or possible to promise. Not affiliated with Uniswap Labs or Robinhood. Do not put in money you want back.</div>
+</footer>
+
+<script>
+(function () {
+  const btn = document.getElementById('themeBtn');
+  function setTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('unic_theme', t);
+    if (btn) btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+  setTheme(localStorage.getItem('unic_theme') || 'light');
+  if (btn) btn.onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+})();
+</script>
+</body>
+</html>
