@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>UNIC App — stake, bond, (3,3) · the unicorn reserve</title>
+<title>uOHM App — stake, bond, (3,3) · the unicorn reserve</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap');
   *{margin:0;padding:0;box-sizing:border-box}
@@ -168,7 +168,7 @@
 </head>
 <body>
 <header><div class="wrap"><div class="glass hrow">
-  <a class="logo" href="/"><span class="mark">🦄</span>UNIC</a>
+  <a class="logo" href="/"><span class="mark">🦄</span>uOHM</a>
   <div class="tabs">
     <div class="tab on" data-view="dash">Dashboard</div>
     <div class="tab" data-view="stake">Stake</div>
@@ -179,7 +179,7 @@
   <div class="wbox">
     <button class="btn primary" id="connectBtn">Connect Wallet</button>
     <button class="icb" id="themeBtn" type="button" aria-label="Toggle dark mode"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"/></svg></button>
-    <a class="icb" id="xbtn" href="https://x.com/UnicReserve" target="_blank" rel="noopener" aria-label="UNIC on X"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+    <a class="icb" id="xbtn" href="https://x.com/uOHMOnRH" target="_blank" rel="noopener" aria-label="uOHM on X"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
   </div>
 </div></div></header>
 
@@ -187,17 +187,17 @@
   <!-- DASHBOARD -->
   <section id="dash">
     <span class="pill">The unicorn reserve · (3,3)</span>
-    <h1>Stake <span class="tok">$UNIC</span>. Earn the rebase.<br><em>Ride the unicorn.</em></h1>
-    <div class="lede">An OHM-style reserve protocol launching on <b>pools.trade</b>, Uniswap's launchpad on Robinhood Chain. <b>Stake</b> to auto-compound every epoch, <b>bond</b> to buy $UNIC at a discount and grow the treasury that backs it. <b>(3,3)</b> — but make it a unicorn.</div>
+    <h1>Stake <span class="tok">$uOHM</span>. Earn the rebase.<br><em>Ride the unicorn.</em></h1>
+    <div class="lede">An OHM-style reserve protocol launching on <b>pools.trade</b>, Uniswap's launchpad on Robinhood Chain. <b>Stake</b> to auto-compound every epoch, <b>bond</b> to buy $uOHM at a discount and grow the treasury that backs it. <b>(3,3)</b> — but make it a unicorn.</div>
     <div class="grid feat">
       <div class="stat big hl"><div class="l">APY</div><div class="v num" id="mApy">—</div><div class="s">auto-compounding · simulated</div></div>
       <div class="stat big"><div class="l">Treasury Balance</div><div class="v num" id="mTreasury">—</div><div class="s" id="mBacking">backing —</div></div>
       <div class="stat big rebase"><div class="l">Next Rebase</div><div class="v cd" id="mRebase">—</div><div class="s">epoch <span id="mEpoch">0</span></div></div>
     </div>
     <div class="grid g4">
-      <div class="stat"><div class="l">$UNIC Price</div><div class="v num" id="mPrice">—</div><div class="s" id="mMc">mcap —</div></div>
+      <div class="stat"><div class="l">$uOHM Price</div><div class="v num" id="mPrice">—</div><div class="s" id="mMc">mcap —</div></div>
       <div class="stat"><div class="l">Total Staked</div><div class="v num" id="mStaked">—</div><div class="s" id="mRatio">— of supply</div></div>
-      <div class="stat"><div class="l">Current Index</div><div class="v mono" id="mIndex" style="font-size:24px">—</div><div class="s">$UNIC per sUNIC</div></div>
+      <div class="stat"><div class="l">Current Index</div><div class="v mono" id="mIndex" style="font-size:24px">—</div><div class="s">$uOHM per suOHM</div></div>
       <div class="stat"><div class="l">Runway</div><div class="v num" id="mRunway">—</div><div class="s">at current emissions</div></div>
     </div>
     <div class="panel" id="lbPanel" style="display:none"><div class="ptitle" style="font-size:19px">The Chain — Top Stakers</div><div id="lbRows" style="margin-top:12px"></div></div>
@@ -206,8 +206,8 @@
   <!-- STAKE -->
   <section id="stake" class="hide">
     <div class="panel">
-      <div class="ptitle">Get In — Stake $UNIC</div>
-      <div class="psub">Stake to receive sUNIC. Your balance rebases up every epoch, automatically. The index only goes one way; the price is not the index.</div>
+      <div class="ptitle">Get In — Stake $uOHM</div>
+      <div class="psub">Stake to receive suOHM. Your balance rebases up every epoch, automatically. The index only goes one way; the price is not the index.</div>
       <div class="seg"><button class="on" id="segStake">Stake</button><button id="segUnstake">Unstake</button></div>
       <div class="field"><div class="ig"><input id="stakeAmt" type="text" inputmode="decimal" placeholder="0.0"><span class="max" id="stakeMax">MAX</span></div><button class="btn primary" id="stakeBtn">Stake</button></div>
       <div style="margin-top:22px"><div class="lbl">Your staked balance</div><div class="bignum num" id="yStaked">—</div></div>
@@ -228,7 +228,7 @@
   <section id="bond" class="hide">
     <div class="panel" style="padding-bottom:12px">
       <div class="ptitle">Bond Marketplace — Feed the Treasury</div>
-      <div class="psub">Buy $UNIC at a discount with vesting. Your payment becomes protocol-owned reserve.</div>
+      <div class="psub">Buy $uOHM at a discount with vesting. Your payment becomes protocol-owned reserve.</div>
       <div class="bonds" id="bondCards"></div>
     </div>
     <div class="panel"><div class="ptitle" style="font-size:19px">Your bonds</div><div id="yourBonds"><div class="psub">No active bonds.</div></div></div>
@@ -238,28 +238,28 @@
   <section id="calc" class="hide">
     <div class="panel">
       <div class="ptitle">The Projection — Staking Calculator</div>
-      <div class="psub">Project your $UNIC at the current APY. Big number goes brrr — read the note under it before you believe it.</div>
+      <div class="psub">Project your $uOHM at the current APY. Big number goes brrr — read the note under it before you believe it.</div>
       <div class="grid g2" style="margin-top:18px">
-        <div><label class="lbl" style="display:block;margin-bottom:8px">$UNIC staked</label><div class="field" style="margin-top:0"><div class="ig"><input id="calcAmt" type="text" inputmode="decimal" value="1000"></div></div></div>
+        <div><label class="lbl" style="display:block;margin-bottom:8px">$uOHM staked</label><div class="field" style="margin-top:0"><div class="ig"><input id="calcAmt" type="text" inputmode="decimal" value="1000"></div></div></div>
         <div><label class="lbl" style="display:block;margin-bottom:8px">Days staked · <b id="calcDaysL" style="color:#d6067f">30</b></label><input id="calcDays" type="range" min="1" max="365" value="30" style="width:100%;margin-top:16px"></div>
       </div>
       <div class="grid g3" style="margin-top:8px">
-        <div class="stat"><div class="l">Projected $UNIC</div><div class="v num" id="calcOut">—</div><div class="s" id="calcMult">—</div></div>
-        <div class="stat"><div class="l">Projected value</div><div class="v num" id="calcUsd">—</div><div class="s">at $<span id="calcPrice">—</span> / $UNIC</div></div>
+        <div class="stat"><div class="l">Projected $uOHM</div><div class="v num" id="calcOut">—</div><div class="s" id="calcMult">—</div></div>
+        <div class="stat"><div class="l">Projected value</div><div class="v num" id="calcUsd">—</div><div class="s">at $<span id="calcPrice">—</span> / $uOHM</div></div>
         <div class="stat hl"><div class="l">Profit</div><div class="v num" id="calcProfit">—</div><div class="s">vs not staking</div></div>
       </div>
-      <p class="note"><b style="color:var(--ink)">This projection is fiction, and so is every one like it.</b> It assumes the APY holds constant — it cannot. The APY is an emission rate, not a return: it pays you in more $UNIC, and more $UNIC is exactly what dilutes the price. Token count going up is not value going up. Illustrative only.</p>
+      <p class="note"><b style="color:var(--ink)">This projection is fiction, and so is every one like it.</b> It assumes the APY holds constant — it cannot. The APY is an emission rate, not a return: it pays you in more $uOHM, and more $uOHM is exactly what dilutes the price. Token count going up is not value going up. Illustrative only.</p>
     </div>
   </section>
 
-  <a class="ca" id="ca" href="#" target="_blank" rel="noopener"><span class="k">$UNIC CA</span><span class="v" id="caV"></span><button class="cp" id="caCopy" type="button">Copy</button></a>
+  <a class="ca" id="ca" href="#" target="_blank" rel="noopener"><span class="k">$uOHM CA</span><span class="v" id="caV"></span><button class="cp" id="caCopy" type="button">Copy</button></a>
 </div>
 
 <div class="toast" id="toast"></div>
 <footer>
-  <div class="fb"><span class="mark" style="font-size:17px">🦄</span> UNIC</div>
+  <div class="fb"><span class="mark" style="font-size:17px">🦄</span> uOHM</div>
   <div>the unicorn reserve · launching on <a href="https://pools.trade" target="_blank" rel="noopener">pools.trade</a> · Robinhood Chain · <a href="/">Home</a> · <a href="/docs">Docs</a></div>
-  <div class="disc">$UNIC is a game. Staking, rebases, bonds and the treasury are a <b>simulation</b> — an off-chain ledger, not a contract. Nothing here custodies your funds, nothing here is yield, and no return is promised or possible to promise. Not affiliated with Uniswap Labs. Do not put in money you want back.</div>
+  <div class="disc">$uOHM is a game. Staking, rebases, bonds and the treasury are a <b>simulation</b> — an off-chain ledger, not a contract. Nothing here custodies your funds, nothing here is yield, and no return is promised or possible to promise. Not affiliated with Uniswap Labs. Do not put in money you want back.</div>
 </footer>
 
 <script src="/client/src/app.js"></script>

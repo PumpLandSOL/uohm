@@ -1,7 +1,7 @@
 {
-  "name": "unic",
+  "name": "uohm",
   "version": "1.0.0",
-  "description": "UNIC ($UNIC) — OHM-style (3,3) staking, bonding & treasury reserve protocol. The unicorn reserve — launching on pools.trade (Uniswap's launchpad), Robinhood Chain.",
+  "description": "uOHM ($uOHM) — OHM-style (3,3) staking, bonding & treasury reserve protocol. The unicorn reserve — launching on pools.trade (Uniswap's launchpad), Robinhood Chain.",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js"

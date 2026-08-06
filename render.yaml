@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: unic
+    name: uohm
     runtime: node
     plan: free
     buildCommand: ""
@@ -11,5 +11,5 @@ services:
         value: "300"
       - key: APY_TARGET
         value: "50000"
-      # UNIC_MINT stays unset until $UNIC launches on pools.trade.
+      # UOHM_MINT stays unset until $uOHM launches on pools.trade.
       # Set it in the Render dashboard to light up the CA bar.

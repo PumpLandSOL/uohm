@@ -1,8 +1,8 @@
-// UNIC (3,3) dashboard — metrics, live rebase, stake/bond/claim.
+// uOHM (3,3) dashboard — metrics, live rebase, stake/bond/claim.
 // All state is the off-chain ledger in server/index.js. Nothing here touches a contract.
 (function () {
   const $ = (id) => document.getElementById(id);
-  let M = null, A = null, wallet = localStorage.getItem('unic_w') || '';
+  let M = null, A = null, wallet = localStorage.getItem('uohm_w') || '';
   let anchor = null; // {index, nextIn, rate, rebaseSec, t, agons, totalAgons}
   let stakeMode = 'stake';
 
@@ -18,10 +18,10 @@
   const themeBtn = $('themeBtn');
   function setTheme(t) {
     document.documentElement.setAttribute('data-theme', t);
-    localStorage.setItem('unic_theme', t);
+    localStorage.setItem('uohm_theme', t);
     if (themeBtn) themeBtn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   }
-  setTheme(localStorage.getItem('unic_theme') || 'light');
+  setTheme(localStorage.getItem('uohm_theme') || 'light');
   if (themeBtn) themeBtn.onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 
   // ---- views ----
@@ -39,8 +39,8 @@
     else { b.textContent = 'Connect Wallet'; b.classList.remove('connected'); b.classList.add('primary'); b.title = ''; }
   }
   function setWallet(a) {
-    if (a && isW(a)) { wallet = a; localStorage.setItem('unic_w', a); renderWallet(); loadAccount(); }
-    else { wallet = ''; A = null; localStorage.removeItem('unic_w'); renderWallet(); ['yStaked', 'yBalance', 'yNext'].forEach((id) => $(id).textContent = '—'); renderYourBonds(); }
+    if (a && isW(a)) { wallet = a; localStorage.setItem('uohm_w', a); renderWallet(); loadAccount(); }
+    else { wallet = ''; A = null; localStorage.removeItem('uohm_w'); renderWallet(); ['yStaked', 'yBalance', 'yNext'].forEach((id) => $(id).textContent = '—'); renderYourBonds(); }
   }
   $('connectBtn').onclick = async () => {
     if (wallet) { setWallet(''); toast('Wallet disconnected'); return; }
@@ -76,7 +76,7 @@
     if (!M) return;
     $('mApy').textContent = apyFmt(M.apy);
     $('mTreasury').textContent = money(M.treasury);
-    $('mBacking').textContent = 'backing $' + M.backingPerToken.toFixed(6) + ' / $UNIC';
+    $('mBacking').textContent = 'backing $' + M.backingPerToken.toFixed(6) + ' / $uOHM';
     $('mPrice').textContent = '$' + M.price.toFixed(4);
     $('mMc').textContent = 'mcap ' + money(M.marketCap);
     $('mRatio').textContent = pct(M.stakingRatio) + ' of supply';
@@ -90,15 +90,15 @@
     // top stakers
     if (M.leaderboard && M.leaderboard.length) {
       $('lbPanel').style.display = 'block';
-      $('lbRows').innerHTML = M.leaderboard.map((b, i) => `<div class="row"><span>${i + 1}. <b class="cd">${b.wallet}</b></span><span><b class="tl">${tok(b.staked)} sUNIC</b> <span style="color:var(--mut)">· ${pct(b.share)}</span></span></div>`).join('');
+      $('lbRows').innerHTML = M.leaderboard.map((b, i) => `<div class="row"><span>${i + 1}. <b class="cd">${b.wallet}</b></span><span><b class="tl">${tok(b.staked)} suOHM</b> <span style="color:var(--mut)">· ${pct(b.share)}</span></span></div>`).join('');
     }
     calc();
     if (M.mint) { const bar = $('ca'); bar.style.display = 'flex'; $('caV').textContent = M.mint.slice(0, 6) + '…' + M.mint.slice(-4); bar.href = 'https://pools.trade'; $('caCopy').onclick = (e) => { e.preventDefault(); navigator.clipboard && navigator.clipboard.writeText(M.mint); $('caCopy').textContent = 'Copied'; setTimeout(() => $('caCopy').textContent = 'Copy', 1200); }; }
   }
   function renderAccount() {
     if (!A) return;
-    $('yBalance').textContent = tok(A.balance) + ' $UNIC';
-    $('yNext').textContent = '+' + (A.staked * M.rate).toFixed(4) + ' $UNIC';
+    $('yBalance').textContent = tok(A.balance) + ' $uOHM';
+    $('yNext').textContent = '+' + (A.staked * M.rate).toFixed(4) + ' $uOHM';
   }
   function renderBonds() {
     if (!M) return;
@@ -115,7 +115,7 @@
     if (!A) { $('yourBonds').innerHTML = '<div class="psub">Connect your wallet to see your bonds.</div>'; return; }
     if (!A.bonds || !A.bonds.length) { $('yourBonds').innerHTML = '<div class="psub">No active bonds.</div>'; return; }
     $('yourBonds').innerHTML = A.bonds.map((b) => `
-      <div class="yb"><span>${b.market} · <b>${tok(b.payout)}</b> $UNIC</span>
+      <div class="yb"><span>${b.market} · <b>${tok(b.payout)}</b> $uOHM</span>
         <div class="prog"><i style="width:${(b.pct * 100).toFixed(0)}%"></i></div>
         <span class="tl"><b>${tok(b.claimable)}</b> claimable</span></div>`).join('') +
       `<div style="display:flex;gap:8px;margin-top:14px"><button class="btn ghost" id="claimBtn">Claim</button><button class="btn primary" id="claimStakeBtn">Claim &amp; Stake</button></div>`;
@@ -130,17 +130,17 @@
     if (!isW(wallet)) return toast('connect your wallet first');
     const amt = parseFloat($('stakeAmt').value); if (!(amt > 0)) return toast('enter an amount');
     const r = await post('/api/' + stakeMode, { wallet, amount: amt });
-    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); $('stakeAmt').value = ''; toast((stakeMode === 'stake' ? 'Staked ' : 'Unstaked ') + tok(amt) + ' $UNIC (3,3)');
+    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); $('stakeAmt').value = ''; toast((stakeMode === 'stake' ? 'Staked ' : 'Unstaked ') + tok(amt) + ' $uOHM (3,3)');
   };
   async function doBond(id) {
     if (!isW(wallet)) return toast('connect your wallet first');
     const amt = parseFloat(($('bondAmt_' + id) || {}).value); if (!(amt > 0)) return toast('enter an amount');
     const r = await post('/api/bond', { wallet, market: id, amount: amt });
-    if (r.error) return toast(r.error); A = r; renderYourBonds(); loadMetrics(); $('bondAmt_' + id).value = ''; toast('Bonded — ' + tok(r.payout) + ' $UNIC vesting');
+    if (r.error) return toast(r.error); A = r; renderYourBonds(); loadMetrics(); $('bondAmt_' + id).value = ''; toast('Bonded — ' + tok(r.payout) + ' $uOHM vesting');
   }
   async function doClaim(autostake) {
     const r = await post('/api/claim', { wallet, autostake });
-    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); renderYourBonds(); toast(autostake ? 'Claimed & staked ' + tok(r.claimed) : 'Claimed ' + tok(r.claimed) + ' $UNIC');
+    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); renderYourBonds(); toast(autostake ? 'Claimed & staked ' + tok(r.claimed) : 'Claimed ' + tok(r.claimed) + ' $uOHM');
   }
   async function post(url, b) { try { return await (await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) })).json(); } catch (e) { return { error: 'request failed' }; } }
 
@@ -153,16 +153,16 @@
     $('mRebase').textContent = cds; $('yRebase').textContent = cds;
     $('mIndex').textContent = li.index.toFixed(5);
     const ratio = li.index / anchor.index;
-    $('mStaked').textContent = tok(anchor.totalStaked * ratio) + ' sUNIC';
-    if (A && anchor.agons) { $('yStaked').textContent = (anchor.agons * li.index).toFixed(4) + ' sUNIC'; }
-    else if (A) $('yStaked').textContent = '0.0000 sUNIC';
+    $('mStaked').textContent = tok(anchor.totalStaked * ratio) + ' suOHM';
+    if (A && anchor.agons) { $('yStaked').textContent = (anchor.agons * li.index).toFixed(4) + ' suOHM'; }
+    else if (A) $('yStaked').textContent = '0.0000 suOHM';
   }
   // ---- calculator ----
   function calc() {
     if (!M) return; const amt = parseFloat($('calcAmt').value) || 0; const days = +$('calcDays').value;
     $('calcDaysL').textContent = days; $('calcPrice').textContent = M.price.toFixed(4);
     const out = amt * Math.pow(1 + M.rate, days * 86400 / M.rebaseSec);
-    $('calcOut').textContent = tok(out) + ' $UNIC';
+    $('calcOut').textContent = tok(out) + ' $uOHM';
     $('calcMult').textContent = (out / (amt || 1)).toFixed(1) + '× your stake';
     $('calcUsd').textContent = money(out * M.price);
     $('calcProfit').textContent = '+' + money((out - amt) * M.price);

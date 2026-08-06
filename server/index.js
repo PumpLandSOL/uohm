@@ -1,7 +1,7 @@
-// UNIC ($UNIC) — OHM-style (3,3) staking + bonding + treasury protocol.
+// uOHM ($uOHM) — OHM-style (3,3) staking + bonding + treasury protocol.
 // The unicorn reserve — launching via pools.trade (Uniswap's launchpad) on Robinhood Chain.
 // Fixed supply => no mint authority => rebases cannot emit on-chain. The index, the
-// sUNIC wrapper and the treasury are therefore an off-chain ledger: a simulation.
+// suOHM wrapper and the treasury are therefore an off-chain ledger: a simulation.
 // Nothing here custodies funds. Payouts, if ever made, are scripted airdrops.
 // Dependency-free: Node http + crypto.
 'use strict';
@@ -11,18 +11,18 @@ const path = require('path');
 
 const PORT = process.env.PORT || 8178;
 const ROOT = path.join(__dirname, '..');
-const TOKEN = process.env.TOKEN_TICKER || 'UNIC';
+const TOKEN = process.env.TOKEN_TICKER || 'uOHM';
 const DATA_PATH = process.env.DATA_PATH || path.join(ROOT, 'data.json');
-const UNIC_MINT = process.env.UNIC_MINT || '';  // set when $UNIC launches
+const UOHM_MINT = process.env.UOHM_MINT || '';  // set when $uOHM launches
 const REBASE_SEC = +(process.env.REBASE_SEC || 300);           // epoch length (demo: 5 min)
 const APY_TARGET = +(process.env.APY_TARGET || 50000);         // displayed APY %  (OHM-style, simulated)
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
-let TOKEN_PRICE = +(process.env.TOKEN_PRICE || 0.005);         // $ per UNIC — overridden by the live pool price below
-// live price: once UNIC_MINT is set, mark to the real Robinhood-chain pool (deepest pair wins)
+let TOKEN_PRICE = +(process.env.TOKEN_PRICE || 0.005);         // $ per uOHM — overridden by the live pool price below
+// live price: once UOHM_MINT is set, mark to the real Robinhood-chain pool (deepest pair wins)
 async function pollPrice() {
-  if (!UNIC_MINT) return;
+  if (!UOHM_MINT) return;
   try {
-    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + UNIC_MINT, { headers: { accept: 'application/json' } });
+    const r = await fetch('https://api.dexscreener.com/latest/dex/tokens/' + UOHM_MINT, { headers: { accept: 'application/json' } });
     if (!r.ok) return;
     const pairs = ((await r.json()).pairs || []).filter((p) => p.chainId === 'robinhood' && +p.priceUsd > 0);
     pairs.sort((a, b) => ((b.liquidity && b.liquidity.usd) || 0) - ((a.liquidity && a.liquidity.usd) || 0));
@@ -30,13 +30,13 @@ async function pollPrice() {
   } catch (e) { /* keep last good */ }
 }
 pollPrice(); setInterval(pollPrice, 60000);
-const SEED_BALANCE = +(process.env.SEED_BALANCE || 1000);      // demo: new wallet starts with this UNIC to try staking
+const SEED_BALANCE = +(process.env.SEED_BALANCE || 1000);      // demo: new wallet starts with this uOHM to try staking
 // per-rebase rate derived from target APY
 const REBASES_YR = 31557600 / REBASE_SEC;
 const RATE = Math.pow(1 + APY_TARGET / 100, 1 / REBASES_YR) - 1;
 const BONDS = [
   { id: 'eth', name: 'ETH', discount: 0.065, vestDays: 5 },
-  { id: 'lp', name: 'UNIC-ETH LP', discount: 0.13, vestDays: 5 },
+  { id: 'lp', name: 'uOHM-ETH LP', discount: 0.13, vestDays: 5 },
   { id: 'usdc', name: 'USDC', discount: 0.04, vestDays: 5 },
 ];
 
@@ -73,7 +73,7 @@ function metrics() {
     treasury: db.treasury, backingPerToken: backing, price: TOKEN_PRICE, marketCap: TOKEN_PRICE * circulating(),
     runwayDays: runway, rebaseSec: REBASE_SEC, nextRebaseIn: Math.max(0, REBASE_SEC - (Date.now() - db.lastRebase) / 1000),
     bonds: BONDS.map((b) => ({ id: b.id, name: b.name, discount: b.discount, vestDays: b.vestDays, price: TOKEN_PRICE * (1 - b.discount) })),
-    leaderboard, stakers: leaderboard.length, mint: UNIC_MINT,
+    leaderboard, stakers: leaderboard.length, mint: UOHM_MINT,
   };
 }
 function account(addr) {
@@ -96,7 +96,7 @@ function body(req) { return new Promise((r) => { let b = ''; req.on('data', (c) 
 
 http.createServer(async (req, res) => {
   const u = req.url.split('?')[0];
-  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UNIC_MINT, network: 'robinhood-chain' });
+  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
   if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const amt = Math.max(0, Math.min(+d.amount || 0, w.balance)); if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); w.balance -= amt; const ag = amt / idx; w.agons += ag; db.totalAgons += ag; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
@@ -105,7 +105,7 @@ http.createServer(async (req, res) => {
     const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' });
     const m = BONDS.find((b) => b.id === d.market); if (!m) return json(res, 200, { error: 'bad market' });
     const usd = Math.max(0, +d.amount || 0); if (usd <= 0) return json(res, 200, { error: 'enter an amount' });
-    const payout = usd / (TOKEN_PRICE * (1 - m.discount)); // discounted UNIC
+    const payout = usd / (TOKEN_PRICE * (1 - m.discount)); // discounted uOHM
     const w = W(d.wallet); const now = Date.now();
     w.bonds.push({ market: m.name, payout, start: now, end: now + m.vestDays * 86400000, claimed: 0, done: false });
     db.treasury += usd; save();
@@ -119,6 +119,6 @@ http.createServer(async (req, res) => {
     return json(res, 200, { ok: true, claimed, autostake, ...account(d.wallet) });
   }
   serve(req, res);
-}).listen(PORT, () => console.log('UNIC ($' + TOKEN + ') on :' + PORT + ' — APY ' + APY_TARGET + '% (simulated), rebase ' + REBASE_SEC + 's'));
+}).listen(PORT, () => console.log('uOHM ($' + TOKEN + ') on :' + PORT + ' — APY ' + APY_TARGET + '% (simulated), rebase ' + REBASE_SEC + 's'));
 
 setInterval(() => { if (Date.now() - db.lastRebase >= REBASE_SEC * 1000) rebase(); }, 1000);
