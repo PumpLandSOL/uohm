@@ -1,13 +1,13 @@
 # uOHM — X Kit
 
-Handle: **@uOHMOnRH** · Site: **uohmonrh.xyz** · Launching on **pools.trade** (Uniswap's launchpad) · Robinhood Chain
+Handle: **@uOHMRH** · Site: **uohmrh.xyz** · Launching on **pools.trade** (Uniswap's launchpad) · Robinhood Chain
 
 ## Profile
 
 **Name:** uOHM 🦄
 **Bio:**
 > the unicorn reserve. OHM-style (3,3) on Robinhood Chain — stake $uOHM, bond the treasury, ride the rebase. Launching on pools.trade. It's a game, not yield.
-**Site:** uohmonrh.xyz
+**Site:** uohmrh.xyz
 **PFP:** uohm-pfp.png · **Banner:** uohm-banner.png
 
 ## Launch thread
@@ -17,7 +17,7 @@ Every chain gets a reserve currency. This one got the unicorn. 🦄
 
 $uOHM — an OHM-style (3,3) reserve protocol on Robinhood Chain, launching through pools.trade, Uniswap's new launchpad.
 
-uohmonrh.xyz
+uohmrh.xyz
 
 **2/** (attach uohm-howitworks.png)
 The classic engine, three moves:
@@ -36,7 +36,7 @@ Simple as.
 **4/** (attach uohm-launch.png)
 Launching on pools.trade — Uniswap's launchpad on Robinhood Chain.
 
-CA drops in the app the moment it's live. Trust only the CA shown at uohmonrh.xyz.
+CA drops in the app the moment it's live. Trust only the CA shown at uohmrh.xyz.
 
 Not affiliated with Uniswap Labs. $uOHM is a game — the ledger is a simulation, nothing custodies your funds, nothing here is yield. Don't put in money you want back. 🦄
 
@@ -44,7 +44,7 @@ Not affiliated with Uniswap Labs. $uOHM is a game — the ledger is a simulation
 
 **APY flex:**
 50,000% APY.* 🦄
-*simulated, auto-compounding, and the asterisk is doing a lot of work — read the docs: uohmonrh.xyz/docs
+*simulated, auto-compounding, and the asterisk is doing a lot of work — read the docs: uohmrh.xyz/docs
 
 **Rebase countdown:**
 The index only goes up. Next rebase in 5 minutes. (3,3) 🦄

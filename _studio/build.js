@@ -60,7 +60,7 @@ assets['uohm-banner'] = page(1500, 500, `
    <div class="wrap">${mark(250)}
      <div><div class="h">The unicorn <span class="grad">reserve.</span></div>
        <div class="s">$uOHM · OHM-style (3,3) on Robinhood Chain · launching on pools.trade</div></div>
-   </div><div class="pill mono">uohmonrh.xyz</div>`);
+   </div><div class="pill mono">uohmrh.xyz</div>`);
 
 // 3) KEY ART 2400x1350
 assets['uohm-keyart'] = page(2400, 1350, `
@@ -76,7 +76,7 @@ assets['uohm-keyart'] = page(2400, 1350, `
      <div class="ey mono">the unicorn reserve · pools.trade · robinhood chain</div>
      <div class="h">The reserve currency<br>in DeFi's favorite<br><span class="grad">shade of pink.</span></div>
      <div class="s">Stake $uOHM and compound every epoch. Bond ETH or USDC at a discount and grow the treasury that backs it. The (3,3) engine that carried OHM to $4B — reborn as a unicorn.</div>
-     <div class="row"><div class="chip">🦄 Stake → suOHM</div><div class="chip">💰 Bond → treasury</div><div class="chip">🤝 (3,3) → everyone wins</div><div class="chip mono" style="color:var(--pink)">uohmonrh.xyz</div></div>
+     <div class="row"><div class="chip">🦄 Stake → suOHM</div><div class="chip">💰 Bond → treasury</div><div class="chip">🤝 (3,3) → everyone wins</div><div class="chip mono" style="color:var(--pink)">uohmrh.xyz</div></div>
    </div>`);
 
 // 4) HOW IT WORKS 2400x1350
@@ -98,7 +98,7 @@ assets['uohm-howitworks'] = page(2400, 1350, `
        ${step(2, 'Bond the treasury', 'Sell ETH or USDC to the protocol at a discount for vesting $uOHM. Every bond deepens the reserve under the horn.')}
        ${step(3, 'Play (3,3)', 'If everyone stakes, everyone wins. Cooperate and the unicorn runs — defect and it&#39;s glue.')}
      </div>
-     <div class="foot"><div>🦄 the unicorn reserve · launching on pools.trade</div><div class="mono" style="color:var(--pink)">uohmonrh.xyz</div></div>
+     <div class="foot"><div>🦄 the unicorn reserve · launching on pools.trade</div><div class="mono" style="color:var(--pink)">uohmrh.xyz</div></div>
    </div>`);
 
 // 5) (3,3) MATRIX 2400x1350 — the classic game grid, unicorn edition
@@ -115,7 +115,7 @@ assets['uohm-33'] = page(2400, 1350, `
      <div style="flex:1.1">
        <div class="h">If everyone stakes,<br><span class="grad">everyone wins.</span></div>
        <div class="s">The (3,3) game, unicorn edition. Staking is cooperation. Bonding feeds the treasury. Selling is glue. Simple as.</div>
-       <div class="mono" style="margin-top:56px;font-size:34px;color:var(--pink);font-weight:700">$uOHM · uohmonrh.xyz · pools.trade</div>
+       <div class="mono" style="margin-top:56px;font-size:34px;color:var(--pink);font-weight:700">$uOHM · uohmrh.xyz · pools.trade</div>
      </div>
      <div class="grid">
        <div class="lab mono">you → · them ↓</div>
@@ -137,7 +137,7 @@ assets['uohm-launch'] = page(2400, 1350, `
      <div class="ey mono">launching on pools.trade — uniswap's launchpad</div>
      <div class="h">$u<span class="grad">OHM</span></div>
      <div class="s">The unicorn reserve · OHM-style (3,3) · Robinhood Chain</div>
-     <div class="pill mono">uohmonrh.xyz</div>
+     <div class="pill mono">uohmrh.xyz</div>
    </div>`);
 
 for (const [name, html] of Object.entries(assets)) {
