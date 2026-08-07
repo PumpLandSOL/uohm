@@ -143,9 +143,16 @@
 
 <div class="wrap">
   <div class="hero">
-    <span class="pill"><span class="d"></span>The unicorn reserve · pools.trade · Robinhood Chain · (3,3)</span>
+    <div style="display:flex;justify-content:center;margin-bottom:16px">
+      <a id="caBar" href="https://pools.trade" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;background:linear-gradient(92deg,#FF007A,#ff5ca8);color:#fff;border-radius:999px;padding:10px 20px;font-weight:700;font-size:13px;box-shadow:0 10px 30px rgba(255,0,122,.3);text-decoration:none">
+        <span style="letter-spacing:.08em">CA</span>
+        <span class="cd" id="caText" style="font-family:'JetBrains Mono',monospace;font-weight:600;font-size:12.5px">0x91F41b74b7906266d4D28a327EBD0ed86c119261</span>
+        <button id="caCopyBtn" type="button" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.45);color:#fff;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:700;cursor:pointer">Copy</button>
+      </a>
+    </div>
+    <span class="pill"><span class="d"></span>The unicorn reserve · LIVE on pools.trade · Robinhood Chain · (3,3)</span>
     <h1>The reserve currency<br>in DeFi's favorite<br><em>shade of pink</em>.</h1>
-    <div class="lede">uOHM is an OHM-style reserve protocol launching on <b>pools.trade</b> — Uniswap's new launchpad on Robinhood Chain — wearing the color every DeFi degen already trusts. <b>Stake</b> $uOHM and your balance compounds every epoch, automatically. <b>Bond</b> ETH or USDC at a discount and grow the treasury that backs it. Same (3,3) engine that carried OHM to <b>$4B</b> — reborn as a unicorn.</div>
+    <div class="lede">uOHM is an OHM-style reserve protocol live on <b>pools.trade</b> — Uniswap's new launchpad on Robinhood Chain — wearing the color every DeFi degen already trusts. <b>Stake</b> $uOHM and your balance compounds every epoch, automatically. <b>Bond</b> ETH or USDC at a discount and grow the treasury that backs it. Same (3,3) engine that carried OHM to <b>$4B</b> — reborn as a unicorn.</div>
     <div class="cta">
       <a class="btn lime big" href="/app">Enter App →</a>
       <a class="btn ghost big" href="/docs">Read the Docs</a>
@@ -191,6 +198,12 @@
     if (btn) btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
   }
   setTheme(localStorage.getItem('uohm_theme') || 'light');
+  document.getElementById('caCopyBtn').addEventListener('click', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const b = e.target;
+    navigator.clipboard && navigator.clipboard.writeText(document.getElementById('caText').textContent);
+    b.textContent = 'Copied'; setTimeout(() => b.textContent = 'Copy', 1200);
+  });
   if (btn) btn.onclick = () => setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
 
   // live strip
