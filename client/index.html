@@ -214,11 +214,12 @@
   <section id="stake" class="hide">
     <div class="panel">
       <div class="ptitle">Get In — Stake $uOHM</div>
-      <div class="psub">Stake to receive suOHM. Your balance rebases up every epoch, automatically. <b>Staking is a real deposit:</b> your wallet sends $uOHM to the protocol treasury <span class="mono">0x6A69…bc97</span>. Unstaking joins the withdrawal queue — payouts are sent from the treasury manually. <b>Minimum stake: 300,000 $uOHM.</b></div>
+      <div class="psub">Stake to receive suOHM. Your balance rebases up every epoch, automatically. <b>Staking is a real deposit:</b> your wallet sends $uOHM to the protocol treasury <span class="mono">0x6A69…bc97</span>. Unstaking joins the withdrawal queue — payouts are sent from the treasury manually. <b>Minimum stake: 300,000 $uOHM.</b> Staked positions are locked for 1 hour before they can be unstaked.</div>
       <div class="seg"><button class="on" id="segStake">Stake</button><button id="segUnstake">Unstake</button></div>
       <div class="field"><div class="ig"><input id="stakeAmt" type="text" inputmode="decimal" placeholder="0.0"><span class="max" id="stakeMax">MAX</span></div><button class="btn primary" id="stakeBtn">Stake</button></div>
       <div style="margin-top:22px"><div class="lbl">Your staked balance</div><div class="bignum num" id="yStaked">—</div></div>
       <div class="rows">
+        <div class="row" id="yLockRow" style="display:none"><span>Unstake unlocks in</span><b class="cd" id="yLock" style="color:var(--accent)">—</b></div>
         <div class="row"><span>Wallet balance</span><b id="yBalance">—</b></div>
         <div class="row"><span>Next reward yield</span><b class="tl" id="yNext">—</b></div>
         <div class="row"><span>APY</span><b class="tl" id="yApy">—</b></div>

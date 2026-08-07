@@ -132,9 +132,21 @@
     if (!A) return;
     $('yBalance').textContent = chainBal == null ? '—' : tok(chainBal) + ' $uOHM';
     $('yNext').textContent = '+' + (A.staked * M.rate).toFixed(4) + ' $uOHM';
+    updateLockUI();
     if (A.pendingOut > 0) toastOnce('Withdrawal of ' + tok(A.pendingOut) + ' $uOHM pending — paid from the treasury');
   }
   let _toasted = ''; function toastOnce(m) { if (_toasted === m) return; _toasted = m; toast(m); }
+  // stake lock: local ticking countdown off the last server-reported lockRemaining
+  let lockUntil = 0;
+  function fmtDur(s) { s = Math.max(0, Math.ceil(s)); const m = Math.floor(s / 60), ss = s % 60; return m > 0 ? m + 'm ' + String(ss).padStart(2, '0') + 's' : ss + 's'; }
+  function updateLockUI() {
+    if (A && A.lockRemaining != null) lockUntil = A.lockRemaining > 0 ? Date.now() + A.lockRemaining * 1000 : 0;
+    const left = lockUntil ? (lockUntil - Date.now()) / 1000 : 0;
+    const row = $('yLockRow'); if (row) { row.style.display = left > 0 ? 'flex' : 'none'; if (left > 0) $('yLock').textContent = fmtDur(left); }
+    if (stakeMode === 'unstake') {
+      const btn = $('stakeBtn'); if (btn) { btn.disabled = left > 0; btn.textContent = left > 0 ? 'Locked · ' + fmtDur(left) : 'Unstake'; }
+    }
+  }
   function renderBonds() {
     if (!M) return;
     $('bondCards').innerHTML = M.bonds.map((b) => `
@@ -158,8 +170,8 @@
   }
 
   // ---- actions ----
-  $('segStake').onclick = () => { stakeMode = 'stake'; $('segStake').classList.add('on'); $('segUnstake').classList.remove('on'); $('stakeBtn').textContent = 'Stake'; };
-  $('segUnstake').onclick = () => { stakeMode = 'unstake'; $('segUnstake').classList.add('on'); $('segStake').classList.remove('on'); $('stakeBtn').textContent = 'Unstake'; };
+  $('segStake').onclick = () => { stakeMode = 'stake'; $('segStake').classList.add('on'); $('segUnstake').classList.remove('on'); $('stakeBtn').disabled = false; $('stakeBtn').textContent = 'Stake'; };
+  $('segUnstake').onclick = () => { stakeMode = 'unstake'; $('segUnstake').classList.add('on'); $('segStake').classList.remove('on'); $('stakeBtn').textContent = 'Unstake'; updateLockUI(); };
   $('stakeMax').onclick = () => { if (!A) return; $('stakeAmt').value = (stakeMode === 'stake' ? (chainBal || 0) : A.staked).toFixed(2); };
   // stake = a REAL $uOHM transfer to the protocol treasury, then the ledger credits suOHM.
   async function depositToTreasury(amt) {
@@ -222,6 +234,7 @@
     $('mStaked').textContent = tok(anchor.totalStaked * ratio) + ' suOHM';
     if (A && anchor.agons) { $('yStaked').textContent = (anchor.agons * li.index).toFixed(4) + ' suOHM'; }
     else if (A) $('yStaked').textContent = '0.0000 suOHM';
+    if (lockUntil) updateLockUI();
   }
   // ---- calculator ----
   function calc() {

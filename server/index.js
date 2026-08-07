@@ -18,6 +18,7 @@ const UOHM_MINT = process.env.UOHM_MINT || '0x91F41b74b7906266d4D28a327EBD0ed86c
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '0x6A690F711928E8b938Fb5FE38F6fc2B8164Abc97';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';  // set to enable /api/withdrawals admin export
 const MIN_STAKE = +(process.env.MIN_STAKE || 300000);  // minimum $uOHM per stake deposit
+const LOCK_SEC = +(process.env.LOCK_SEC || 3600);      // stake lock: must stay staked at least this long before unstaking
 // Robinhood Chain mainnet — balances are read here directly so the app shows the truth
 // no matter which chain the user's wallet is parked on.
 const RPC_URL = process.env.RPC_URL || 'https://rpc.mainnet.chain.robinhood.com';
@@ -27,7 +28,13 @@ async function rpc(method, params) {
   const j = await r.json(); if (j.error) throw new Error(j.error.message); return j.result;
 }
 const REBASE_SEC = +(process.env.REBASE_SEC || 300);           // epoch length (demo: 5 min)
-const APY_TARGET = +(process.env.APY_TARGET || 50000);         // displayed APY %  (OHM-style, simulated)
+// Dynamic APY (OHM-style reflexive emissions): rich when the pool is small, decaying as it fills.
+// apy = APY_MIN + (APY_MAX - APY_MIN) * HALF / (HALF + totalStaked)
+// => empty pool ≈ APY_MAX; at HALF staked it's the midpoint; large pool → APY_MIN.
+const APY_MAX = +(process.env.APY_MAX || 50000);   // ceiling, near-empty pool
+const APY_MIN = +(process.env.APY_MIN || 6000);    // floor, deep pool
+const APY_HALF = +(process.env.APY_HALF || 4e6);   // staked $uOHM at the halfway point
+const APY_TARGET = APY_MAX;                          // legacy alias (banner copy / startup log)
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
 let TOKEN_PRICE = +(process.env.TOKEN_PRICE || 0.005);         // $ per uOHM — overridden by the live pool price below
 // live price: once UOHM_MINT is set, mark to the real Robinhood-chain pool (deepest pair wins)
@@ -45,7 +52,10 @@ pollPrice(); setInterval(pollPrice, 60000);
 const SEED_BALANCE = +(process.env.SEED_BALANCE || 1e6);       // demo: new wallet starts with this uOHM to try staking (raised from 1k — no more perceived stake cap)
 // per-rebase rate derived from target APY
 const REBASES_YR = 31557600 / REBASE_SEC;
-const RATE = Math.pow(1 + APY_TARGET / 100, 1 / REBASES_YR) - 1;
+// current APY from the live pool, and the per-rebase rate derived from it
+// staked value from the COMMITTED index (no live fraction) — avoids a liveIndex→rate cycle
+function currentApy(ts) { const s = ts == null ? db.totalAgons * db.index : ts; return APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s))); }
+function currentRate(ts) { return Math.pow(1 + currentApy(ts) / 100, 1 / REBASES_YR) - 1; }
 const BONDS = [
   { id: 'eth', name: 'ETH', discount: 0.065, vestDays: 5 },
   { id: 'lp', name: 'uOHM-ETH LP', discount: 0.13, vestDays: 5 },
@@ -68,11 +78,11 @@ function tapePush(type, wallet, amount) {
 let saveT = null; function save() { if (saveT) return; saveT = setTimeout(() => { saveT = null; try { fs.writeFileSync(DATA_PATH, JSON.stringify(db)); } catch (e) {} }, 800); }
 const isWallet = (s) => /^0x[a-fA-F0-9]{40}$/.test(s);
 
-function rebase() { db.index *= (1 + RATE); db.epoch++; db.lastRebase = Date.now(); save(); }
+function rebase() { db.index *= (1 + currentRate()); db.epoch++; db.lastRebase = Date.now(); save(); }
 // catch up missed epochs on boot
 (function catchup() { const missed = Math.floor((Date.now() - db.lastRebase) / 1000 / REBASE_SEC); for (let i = 0; i < Math.min(missed, 10000); i++) rebase(); })();
 
-function liveIndex() { const frac = (Date.now() - db.lastRebase) / 1000 / REBASE_SEC; return db.index * (1 + RATE * Math.max(0, Math.min(1, frac))); }
+function liveIndex() { const frac = (Date.now() - db.lastRebase) / 1000 / REBASE_SEC; return db.index * (1 + currentRate() * Math.max(0, Math.min(1, frac))); }
 function W(addr) { return db.wallets[addr] || (db.wallets[addr] = { balance: SEED_BALANCE, agons: 0, bonds: [], seeded: true }); }
 function stakedOf(w, idx) { return w.agons * (idx || liveIndex()); }
 function totalStaked(idx) { return db.totalAgons * (idx || liveIndex()); }
@@ -85,11 +95,11 @@ function metrics() {
     .map((x) => ({ wallet: x.a.slice(0, 4) + '…' + x.a.slice(-4), staked: x.staked, share: ts > 0 ? x.staked / ts : 0 }));
   const backing = db.treasury / circulating();
   // runway: days the treasury can fund current reward emissions (rewards per day in $ vs treasury)
-  const rewardsPerDay = ts * (Math.pow(1 + RATE, 86400 / REBASE_SEC) - 1) * TOKEN_PRICE;
+  const rate = currentRate(ts); const rewardsPerDay = ts * (Math.pow(1 + rate, 86400 / REBASE_SEC) - 1) * TOKEN_PRICE;
   // nothing staked => nothing emitting => runway is undefined, not zero. null so the UI can say so.
   const runway = rewardsPerDay > 0 ? db.treasury / rewardsPerDay : null;
   return {
-    token: TOKEN, apy: APY_TARGET, rate: RATE, index: +idx.toFixed(6), epoch: db.epoch,
+    token: TOKEN, apy: currentApy(ts), rate: rate, index: +idx.toFixed(6), epoch: db.epoch,
     totalStaked: ts, circulating: circulating(), stakingRatio: ts / circulating(),
     treasury: db.treasury, backingPerToken: backing, price: TOKEN_PRICE, marketCap: TOKEN_PRICE * circulating(),
     runwayDays: runway, rebaseSec: REBASE_SEC, nextRebaseIn: Math.max(0, REBASE_SEC - (Date.now() - db.lastRebase) / 1000),
@@ -107,7 +117,8 @@ function account(addr) {
   });
   const pendingOut = db.withdrawals.filter((x) => x.wallet === addr && x.status === 'pending').reduce((s, x) => s + x.amount, 0);
   return { wallet: addr, balance: w.balance, staked: stakedOf(w, idx), index: +idx.toFixed(6),
-    nextReward: stakedOf(w, idx) * RATE, bonds, seeded: !!w.seeded, pendingOut };
+    nextReward: stakedOf(w, idx) * currentRate(), bonds, seeded: !!w.seeded, pendingOut,
+    lockRemaining: Math.max(0, Math.ceil(((w.lockUntil || 0) - Date.now()) / 1000)) };
 }
 
 // ---------- http ----------
@@ -118,7 +129,7 @@ function body(req) { return new Promise((r) => { let b = ''; req.on('data', (c) 
 
 http.createServer(async (req, res) => {
   const u = req.url.split('?')[0];
-  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, minStake: MIN_STAKE, chainId: CHAIN_ID, rpcUrl: RPC_URL, network: 'robinhood-chain' });
+  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, minStake: MIN_STAKE, lockSec: LOCK_SEC, chainId: CHAIN_ID, rpcUrl: RPC_URL, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
   if (req.method === 'POST' && u === '/api/balance') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); try { const hex = await rpc('eth_call', [{ to: UOHM_MINT, data: '0x70a08231' + d.wallet.slice(2).toLowerCase().padStart(64, '0') }, 'latest']); return json(res, 200, { balance: Number(BigInt(hex)) / 1e18 }); } catch (e) { return json(res, 200, { error: 'rpc unavailable' }); } }
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
@@ -147,6 +158,7 @@ http.createServer(async (req, res) => {
     if (!(amt > 0)) return json(res, 200, { error: 'zero-value deposit' });
     if (amt < MIN_STAKE) return json(res, 200, { error: 'below minimum — deposit was ' + amt.toLocaleString() + ', minimum is ' + MIN_STAKE.toLocaleString() + ' $uOHM' });
     const w = W(d.wallet); const idx = liveIndex(); const ag = amt / idx; w.agons += ag; db.totalAgons += ag;
+    w.lockUntil = Date.now() + LOCK_SEC * 1000;  // fresh deposit (re)locks the position for the minimum
     tapePush('stake', d.wallet, amt); db.tape[0].tx = txHash; db.tape[0].ag = ag; db.tape[0].addr = d.wallet; save();
     return json(res, 200, { ok: true, ...account(d.wallet) });
   }
@@ -173,7 +185,7 @@ http.createServer(async (req, res) => {
     save(); return json(res, 200, { reversed, count: reversed.length });
   }
   // unstake = join the withdrawal queue; payouts are sent manually from the treasury wallet.
-  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
+  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const lockLeft = Math.ceil(((w.lockUntil || 0) - Date.now()) / 1000); if (lockLeft > 0) return json(res, 200, { error: 'staked positions are locked for ' + Math.round(LOCK_SEC / 60) + ' min — ' + Math.ceil(lockLeft / 60) + ' min left' }); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
   // operator export: who is owed what (requires ADMIN_KEY env)
   if (u === '/api/withdrawals') { const q = new URL(req.url, 'http://x').searchParams; if (!ADMIN_KEY || q.get('key') !== ADMIN_KEY) return json(res, 403, { error: 'nope' }); return json(res, 200, { treasury: TREASURY_WALLET, pending: db.withdrawals.filter((x) => x.status === 'pending'), all: db.withdrawals }); }
   if (req.method === 'POST' && u === '/api/bond') {
