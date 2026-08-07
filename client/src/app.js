@@ -2,7 +2,7 @@
 // All state is the off-chain ledger in server/index.js. Nothing here touches a contract.
 (function () {
   const $ = (id) => document.getElementById(id);
-  let M = null, A = null, wallet = localStorage.getItem('uohm_w') || '';
+  let M = null, A = null, CFG = null, chainBal = null, wallet = localStorage.getItem('uohm_w') || '';
   let anchor = null; // {index, nextIn, rate, rebaseSec, t, agons, totalAgons}
   let stakeMode = 'stake';
 
@@ -39,7 +39,7 @@
     else { b.textContent = 'Connect Wallet'; b.classList.remove('connected'); b.classList.add('primary'); b.title = ''; }
   }
   function setWallet(a) {
-    if (a && isW(a)) { wallet = a; localStorage.setItem('uohm_w', a); renderWallet(); loadAccount(); }
+    if (a && isW(a)) { wallet = a; localStorage.setItem('uohm_w', a); renderWallet(); loadAccount(); loadChainBalance(); }
     else { wallet = ''; A = null; localStorage.removeItem('uohm_w'); renderWallet(); ['yStaked', 'yBalance', 'yNext'].forEach((id) => $(id).textContent = '—'); renderYourBonds(); }
   }
   $('connectBtn').onclick = async () => {
@@ -56,7 +56,17 @@
   renderWallet();
 
   // ---- fetch ----
+  async function loadConfig() { try { CFG = await (await fetch('/api/config')).json(); } catch (e) {} }
   async function loadMetrics() { try { M = await (await fetch('/api/metrics')).json(); reanchor(); renderMetrics(); renderBonds(); } catch (e) {} }
+  // real on-chain $uOHM balance of the connected wallet (ERC-20 balanceOf via the injected provider)
+  async function loadChainBalance() {
+    if (!window.ethereum || !CFG || !CFG.mint || !isW(wallet)) { chainBal = null; return; }
+    try {
+      const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: CFG.mint, data: '0x70a08231' + wallet.slice(2).toLowerCase().padStart(64, '0') }, 'latest'] });
+      chainBal = Number(BigInt(hex)) / 1e18;
+    } catch (e) { chainBal = null; }
+    renderAccount();
+  }
   async function loadAccount() { if (!isW(wallet)) return; try { A = await (await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet }) })).json(); reanchor(); renderAccount(); } catch (e) {} }
   function reanchor() {
     if (!M) return;
@@ -106,9 +116,11 @@
   }
   function renderAccount() {
     if (!A) return;
-    $('yBalance').textContent = tok(A.balance) + ' $uOHM';
+    $('yBalance').textContent = chainBal == null ? '—' : tok(chainBal) + ' $uOHM';
     $('yNext').textContent = '+' + (A.staked * M.rate).toFixed(4) + ' $uOHM';
+    if (A.pendingOut > 0) toastOnce('Withdrawal of ' + tok(A.pendingOut) + ' $uOHM pending — paid from the treasury');
   }
+  let _toasted = ''; function toastOnce(m) { if (_toasted === m) return; _toasted = m; toast(m); }
   function renderBonds() {
     if (!M) return;
     $('bondCards').innerHTML = M.bonds.map((b) => `
@@ -134,12 +146,39 @@
   // ---- actions ----
   $('segStake').onclick = () => { stakeMode = 'stake'; $('segStake').classList.add('on'); $('segUnstake').classList.remove('on'); $('stakeBtn').textContent = 'Stake'; };
   $('segUnstake').onclick = () => { stakeMode = 'unstake'; $('segUnstake').classList.add('on'); $('segStake').classList.remove('on'); $('stakeBtn').textContent = 'Unstake'; };
-  $('stakeMax').onclick = () => { if (!A) return; $('stakeAmt').value = (stakeMode === 'stake' ? A.balance : A.staked).toFixed(2); };
+  $('stakeMax').onclick = () => { if (!A) return; $('stakeAmt').value = (stakeMode === 'stake' ? (chainBal || 0) : A.staked).toFixed(2); };
+  // stake = a REAL $uOHM transfer to the protocol treasury, then the ledger credits suOHM.
+  async function depositToTreasury(amt) {
+    if (!window.ethereum) throw new Error('No EVM wallet found');
+    if (!CFG || !CFG.mint || !CFG.treasury) throw new Error('config not loaded — try again');
+    const wei = BigInt(Math.round(amt * 1e6)) * (10n ** 12n);
+    const data = '0xa9059cbb' + CFG.treasury.slice(2).toLowerCase().padStart(64, '0') + wei.toString(16).padStart(64, '0');
+    const txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: wallet, to: CFG.mint, data }] });
+    toast('Deposit sent — waiting for confirmation…');
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      try { const rc = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [txHash] });
+        if (rc) { if (rc.status === '0x1') return txHash; throw new Error('deposit transaction failed'); } } catch (e) { if (String(e.message).includes('failed')) throw e; }
+    }
+    throw new Error('deposit not confirmed yet — refresh in a minute');
+  }
   $('stakeBtn').onclick = async () => {
     if (!isW(wallet)) return toast('connect your wallet first');
     const amt = parseFloat($('stakeAmt').value); if (!(amt > 0)) return toast('enter an amount');
-    const r = await post('/api/' + stakeMode, { wallet, amount: amt });
-    if (r.error) return toast(r.error); A = r; reanchor(); renderAccount(); $('stakeAmt').value = ''; toast((stakeMode === 'stake' ? 'Staked ' : 'Unstaked ') + tok(amt) + ' $uOHM (3,3)');
+    try {
+      if (stakeMode === 'stake') {
+        const txHash = await depositToTreasury(amt);
+        const r = await post('/api/stake', { wallet, amount: amt, txHash });
+        if (r.error) return toast(r.error);
+        A = r; reanchor(); renderAccount(); loadChainBalance(); $('stakeAmt').value = '';
+        toast('Deposited & staked ' + tok(amt) + ' $uOHM (3,3)');
+      } else {
+        const r = await post('/api/unstake', { wallet, amount: amt });
+        if (r.error) return toast(r.error);
+        A = r; reanchor(); renderAccount(); $('stakeAmt').value = '';
+        toast('Unstaked — ' + tok(r.queued) + ' $uOHM queued for payout from the treasury');
+      }
+    } catch (e) { toast(e && e.message ? e.message : 'transaction rejected'); }
   };
   async function doBond(id) {
     if (!isW(wallet)) return toast('connect your wallet first');
@@ -178,7 +217,7 @@
   }
   $('calcAmt').addEventListener('input', calc); $('calcDays').addEventListener('input', calc);
 
-  loadMetrics(); if (wallet) loadAccount();
+  loadConfig().then(() => { if (wallet) loadChainBalance(); }); loadMetrics(); if (wallet) loadAccount();
   setInterval(loadMetrics, 6000); setInterval(() => { if (wallet) { loadAccount(); renderYourBonds(); } }, 6000);
   renderYourBonds(); setInterval(tick, 100); tick();
 })();

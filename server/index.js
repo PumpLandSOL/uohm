@@ -14,6 +14,9 @@ const ROOT = path.join(__dirname, '..');
 const TOKEN = process.env.TOKEN_TICKER || 'uOHM';
 const DATA_PATH = process.env.DATA_PATH || path.join(ROOT, 'data.json');
 const UOHM_MINT = process.env.UOHM_MINT || '0x91F41b74b7906266d4D28a327EBD0ed86c119261';  // $uOHM on Robinhood Chain
+// staking custody: real $uOHM deposits land here (key held offline by the operator — never on this server)
+const TREASURY_WALLET = process.env.TREASURY_WALLET || '0x6A690F711928E8b938Fb5FE38F6fc2B8164Abc97';
+const ADMIN_KEY = process.env.ADMIN_KEY || '';  // set to enable /api/withdrawals admin export
 const REBASE_SEC = +(process.env.REBASE_SEC || 300);           // epoch length (demo: 5 min)
 const APY_TARGET = +(process.env.APY_TARGET || 50000);         // displayed APY %  (OHM-style, simulated)
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
@@ -45,6 +48,7 @@ let db = { index: 1, epoch: 0, lastRebase: Date.now(), treasury: +(process.env.T
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'))); } catch (e) {}
 if (!db.wallets) db.wallets = {};
 if (!db.tape) db.tape = [];
+if (!db.withdrawals) db.withdrawals = [];  // pending unstake payouts, settled manually from the treasury
 // migration: wallets seeded under the old 1k cap get topped up to the new seed
 for (const w of Object.values(db.wallets)) if (w.seeded && w.balance <= 1000) w.balance += SEED_BALANCE - 1000;
 // the Stampede: rolling tape of protocol actions, newest first
@@ -92,8 +96,9 @@ function account(addr) {
     const claimable = b.payout * pct - b.claimed;
     return { market: b.market, payout: b.payout, claimable: Math.max(0, claimable), pct, endsIn: Math.max(0, (b.end - now) / 1000) };
   });
+  const pendingOut = db.withdrawals.filter((x) => x.wallet === addr && x.status === 'pending').reduce((s, x) => s + x.amount, 0);
   return { wallet: addr, balance: w.balance, staked: stakedOf(w, idx), index: +idx.toFixed(6),
-    nextReward: stakedOf(w, idx) * RATE, bonds, seeded: !!w.seeded };
+    nextReward: stakedOf(w, idx) * RATE, bonds, seeded: !!w.seeded, pendingOut };
 }
 
 // ---------- http ----------
@@ -104,11 +109,16 @@ function body(req) { return new Promise((r) => { let b = ''; req.on('data', (c) 
 
 http.createServer(async (req, res) => {
   const u = req.url.split('?')[0];
-  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, network: 'robinhood-chain' });
+  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
-  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const amt = Math.max(0, Math.min(+d.amount || 0, w.balance)); if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); w.balance -= amt; const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
-  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); w.balance += amt; tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  // stake = a real on-chain $uOHM transfer to the treasury; the client sends the tx hash after it confirms.
+  // The ledger credits suOHM against that deposit. (Deposit hashes are recorded for reconciliation.)
+  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); if (!/^0x[0-9a-fA-F]{64}$/.test(d.txHash || '')) return json(res, 200, { error: 'missing deposit tx — stake sends $uOHM to the treasury first' }); if (db.tape.some((e) => e.tx === d.txHash)) return json(res, 200, { error: 'deposit already credited' }); const w = W(d.wallet); const idx = liveIndex(); const amt = +d.amount || 0; if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); db.tape[0].tx = d.txHash; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  // unstake = join the withdrawal queue; payouts are sent manually from the treasury wallet.
+  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
+  // operator export: who is owed what (requires ADMIN_KEY env)
+  if (u === '/api/withdrawals') { const q = new URL(req.url, 'http://x').searchParams; if (!ADMIN_KEY || q.get('key') !== ADMIN_KEY) return json(res, 403, { error: 'nope' }); return json(res, 200, { treasury: TREASURY_WALLET, pending: db.withdrawals.filter((x) => x.status === 'pending'), all: db.withdrawals }); }
   if (req.method === 'POST' && u === '/api/bond') {
     const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' });
     const m = BONDS.find((b) => b.id === d.market); if (!m) return json(res, 200, { error: 'bad market' });

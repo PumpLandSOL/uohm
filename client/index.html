@@ -214,7 +214,7 @@
   <section id="stake" class="hide">
     <div class="panel">
       <div class="ptitle">Get In — Stake $uOHM</div>
-      <div class="psub">Stake to receive suOHM. Your balance rebases up every epoch, automatically. The index only goes one way; the price is not the index.</div>
+      <div class="psub">Stake to receive suOHM. Your balance rebases up every epoch, automatically. <b>Staking is a real deposit:</b> your wallet sends $uOHM to the protocol treasury <span class="mono">0x6A69…bc97</span>. Unstaking joins the withdrawal queue — payouts are sent from the treasury manually.</div>
       <div class="seg"><button class="on" id="segStake">Stake</button><button id="segUnstake">Unstake</button></div>
       <div class="field"><div class="ig"><input id="stakeAmt" type="text" inputmode="decimal" placeholder="0.0"><span class="max" id="stakeMax">MAX</span></div><button class="btn primary" id="stakeBtn">Stake</button></div>
       <div style="margin-top:22px"><div class="lbl">Your staked balance</div><div class="bignum num" id="yStaked">—</div></div>
@@ -266,7 +266,7 @@
 <footer>
   <div class="fb"><span class="mark" style="font-size:17px">🦄</span> uOHM</div>
   <div>the unicorn reserve · launching on <a href="https://pools.trade" target="_blank" rel="noopener">pools.trade</a> · Robinhood Chain · <a href="/">Home</a> · <a href="/docs">Docs</a></div>
-  <div class="disc">$uOHM is a game. Staking, rebases, bonds and the treasury are a <b>simulation</b> — an off-chain ledger, not a contract. Nothing here custodies your funds, nothing here is yield, and no return is promised or possible to promise. Not affiliated with Uniswap Labs. Do not put in money you want back.</div>
+  <div class="disc">$uOHM is a game with real deposits. <b>Staking sends your $uOHM to the protocol treasury</b> (0x6A69…bc97) — a real transfer, so the protocol custodies staked tokens. Withdrawals are queued and paid manually from the treasury; rebases and the index are an off-chain ledger, not a contract, and no return is promised or possible to promise. Not affiliated with Uniswap Labs. Do not stake money you cannot afford to lose.</div>
 </footer>
 
 <script src="/client/src/app.js"></script>
