@@ -99,6 +99,16 @@
   function renderMetrics() {
     if (!M) return;
     $('mApy').textContent = apyFmt(M.apy);
+    // 24-hour APY boost banner + countdown
+    const note = $('mApyNote'), card = $('mApy').closest('.stat');
+    if (M.boost) {
+      boostEnd = Date.now() + M.boost.secondsLeft * 1000; boostLeft = M.boost.secondsLeft;
+      if (card) card.classList.add('boosting');
+      if (note) note.innerHTML = '⚡ 24-HOUR APY BOOST · <span id="boostCd" class="cd"></span> left';
+    } else {
+      boostLeft = 0; if (card) card.classList.remove('boosting');
+      if (note) note.textContent = 'scales with the staked pool';
+    }
     $('mTreasury').textContent = money(M.treasury);
     $('mBacking').textContent = 'backing $' + M.backingPerToken.toFixed(6) + ' / $uOHM';
     $('mPrice').textContent = '$' + M.price.toFixed(4);
@@ -137,7 +147,7 @@
   }
   let _toasted = ''; function toastOnce(m) { if (_toasted === m) return; _toasted = m; toast(m); }
   // stake lock: local ticking countdown off the last server-reported lockRemaining
-  let lockUntil = 0;
+  let lockUntil = 0, boostLeft = 0, boostEnd = 0;
   function fmtDur(s) { s = Math.max(0, Math.ceil(s)); const m = Math.floor(s / 60), ss = s % 60; return m > 0 ? m + 'm ' + String(ss).padStart(2, '0') + 's' : ss + 's'; }
   function updateLockUI() {
     if (A && A.lockRemaining != null) lockUntil = A.lockRemaining > 0 ? Date.now() + A.lockRemaining * 1000 : 0;
@@ -235,6 +245,7 @@
     if (A && anchor.agons) { $('yStaked').textContent = (anchor.agons * li.index).toFixed(4) + ' suOHM'; }
     else if (A) $('yStaked').textContent = '0.0000 suOHM';
     if (lockUntil) updateLockUI();
+    if (boostLeft > 0) { boostLeft = (boostEnd - Date.now()) / 1000; const b = $('boostCd'); if (b) { const s = Math.max(0, boostLeft); const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = Math.floor(s % 60); b.textContent = h + ':' + String(m).padStart(2, '0') + ':' + String(ss).padStart(2, '0'); } }
   }
   // ---- calculator ----
   function calc() {

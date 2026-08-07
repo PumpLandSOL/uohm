@@ -105,6 +105,11 @@
   html[data-theme="dark"] .stat.rebase .l::after{color:var(--accent)}
   .stat.rebase .v{font-family:'JetBrains Mono',monospace;font-weight:600;font-size:34px}
   @keyframes rp{0%,100%{opacity:1}50%{opacity:.3}}
+  .stat.boosting{border-color:transparent}
+  .stat.boosting::before{background:linear-gradient(90deg,#FF007A,#ffb020,#FF007A);background-size:200% 100%;height:5px;animation:bshimmer 2s linear infinite}
+  .stat.boosting{box-shadow:0 0 0 1px rgba(255,0,122,.5),0 10px 40px rgba(255,0,122,.28)}
+  .stat.boosting #mApyNote{color:#c40062;font-weight:800}
+  @keyframes bshimmer{0%{background-position:0 0}100%{background-position:200% 0}}
 
   /* ── panels ── */
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:28px;margin-top:20px;box-shadow:var(--sh)}

@@ -9,6 +9,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
+const BOOT_TS = Date.now();
 const PORT = process.env.PORT || 8178;
 const ROOT = path.join(__dirname, '..');
 const TOKEN = process.env.TOKEN_TICKER || 'uOHM';
@@ -35,6 +36,11 @@ const APY_MAX = +(process.env.APY_MAX || 50000);   // ceiling, near-empty pool
 const APY_MIN = +(process.env.APY_MIN || 6000);    // floor, deep pool
 const APY_HALF = +(process.env.APY_HALF || 4e6);   // staked $uOHM at the halfway point
 const APY_TARGET = APY_MAX;                          // legacy alias (banner copy / startup log)
+// 24-HOUR APY BOOST: while active, APY is floored at BOOST_APY (old-school ponzi numbers).
+// Arm it by setting BOOST_UNTIL to a unix-ms timestamp (or BOOST_HOURS from boot); off by default.
+const BOOST_APY = +(process.env.BOOST_APY || 250000);
+const BOOST_UNTIL_ENV = +(process.env.BOOST_UNTIL || 0);
+const BOOST_HOURS = +(process.env.BOOST_HOURS || 0);
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
 let TOKEN_PRICE = +(process.env.TOKEN_PRICE || 0.005);         // $ per uOHM — overridden by the live pool price below
 // live price: once UOHM_MINT is set, mark to the real Robinhood-chain pool (deepest pair wins)
@@ -66,7 +72,14 @@ const REBASES_YR = 31557600 / REBASE_SEC;
 // staked value from the COMMITTED index (no live fraction) — avoids a liveIndex→rate cycle
 // pool = real staked $uOHM in the treasury (falls back to the ledger tally before the first poll)
 function poolStaked() { return treasuryStaked > 0 ? treasuryStaked : db.totalAgons * db.index; }
-function currentApy(ts) { const s = ts == null ? poolStaked() : ts; return APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s))); }
+// boost window: env-armed, or persisted in the ledger once armed via admin
+function boostUntil() { return Math.max(BOOST_UNTIL_ENV, db.boostUntil || 0, BOOST_HOURS > 0 ? BOOT_TS + BOOST_HOURS * 3600e3 : 0); }
+function boostActive() { return Date.now() < boostUntil(); }
+function currentApy(ts) {
+  const s = ts == null ? poolStaked() : ts;
+  const base = APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s)));
+  return boostActive() ? Math.max(base, BOOST_APY) : base;
+}
 function currentRate(ts) { return Math.pow(1 + currentApy(ts) / 100, 1 / REBASES_YR) - 1; }
 const BONDS = [
   { id: 'eth', name: 'ETH', discount: 0.065, vestDays: 5 },
@@ -119,6 +132,7 @@ function metrics() {
     runwayDays: runway, rebaseSec: REBASE_SEC, nextRebaseIn: Math.max(0, REBASE_SEC - (Date.now() - db.lastRebase) / 1000),
     bonds: BONDS.map((b) => ({ id: b.id, name: b.name, discount: b.discount, vestDays: b.vestDays, price: TOKEN_PRICE * (1 - b.discount) })),
     leaderboard, stakers: leaderboard.length, mint: UOHM_MINT, tape: db.tape.slice(0, 12),
+    boost: boostActive() ? { apy: BOOST_APY, until: boostUntil(), secondsLeft: Math.ceil((boostUntil() - Date.now()) / 1000) } : null,
   };
 }
 function account(addr) {
@@ -200,6 +214,14 @@ http.createServer(async (req, res) => {
   }
   // unstake = join the withdrawal queue; payouts are sent manually from the treasury wallet.
   if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const lockLeft = Math.ceil(((w.lockUntil || 0) - Date.now()) / 1000); if (lockLeft > 0) return json(res, 200, { error: 'staked positions are locked for ' + Math.round(LOCK_SEC / 60) + ' min — ' + Math.ceil(lockLeft / 60) + ' min left' }); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
+  // operator: arm/clear the 24-hour APY boost (requires ADMIN_KEY). ?hours=24 arms it, ?off=1 clears.
+  if (u === '/api/admin/boost') {
+    const q = new URL(req.url, 'http://x').searchParams; if (!ADMIN_KEY || q.get('key') !== ADMIN_KEY) return json(res, 403, { error: 'nope' });
+    if (q.get('off')) { db.boostUntil = 0; save(); return json(res, 200, { ok: true, boost: null }); }
+    const hours = Math.max(0, +q.get('hours') || 24);
+    db.boostUntil = Date.now() + hours * 3600e3; save();
+    return json(res, 200, { ok: true, boostApy: BOOST_APY, until: db.boostUntil, hours });
+  }
   // operator export: who is owed what (requires ADMIN_KEY env)
   if (u === '/api/withdrawals') { const q = new URL(req.url, 'http://x').searchParams; if (!ADMIN_KEY || q.get('key') !== ADMIN_KEY) return json(res, 403, { error: 'nope' }); return json(res, 200, { treasury: TREASURY_WALLET, pending: db.withdrawals.filter((x) => x.status === 'pending'), all: db.withdrawals }); }
   if (req.method === 'POST' && u === '/api/bond') {
