@@ -165,6 +165,81 @@ assets['uohm-vs-legends'] = page(2400, 1350, `
      <div class="foot"><div>🦄 simulated · no custody · not yield — it&#39;s a game</div><div class="mono" style="color:var(--pink)">uohmrh.xyz</div></div>
    </div>`);
 
+// 8) FLYWHEEL 2400x1350 — the reflexive loop that carried OHM
+const fnode = (n, t, d) => `<div style="flex:1;background:#fff;border:2px solid rgba(255,0,122,.3);border-radius:28px;padding:44px 40px;box-shadow:0 14px 44px rgba(255,0,122,.08);position:relative">
+  <div class="mono" style="font-size:34px;color:var(--pink);font-weight:700;margin-bottom:18px">${n}</div>
+  <div style="font-size:44px;font-weight:800;margin-bottom:14px">${t}</div>
+  <div style="font-size:28px;color:var(--dim);line-height:1.4;font-weight:500">${d}</div></div>`;
+const arrow = `<div style="display:flex;align-items:center;font-size:56px;color:var(--pink);font-weight:900">→</div>`;
+assets['uohm-flywheel'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:110px 140px;display:flex;flex-direction:column}
+  .ey{font-size:34px;letter-spacing:.3em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:22px}
+  .h{font-size:92px;font-weight:900;letter-spacing:-.02em;margin-bottom:60px}
+  .loop{background:linear-gradient(92deg,#FF007A,#ff5ca8);color:#fff;border-radius:999px;padding:26px 60px;font-size:38px;font-weight:800;align-self:center;margin-top:64px;box-shadow:0 18px 55px rgba(255,0,122,.32)}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;font-size:30px;color:var(--dim);font-weight:600}`,
+  `${field(2400, 1350, 32, 101)}
+   <div class="wrap">
+     <div class="ey mono">the flywheel</div>
+     <div class="h">The machine that <span class="grad">printed $20B.</span></div>
+     <div style="display:flex;gap:26px">
+       ${fnode('01', 'Bond', 'ETH & USDC sold to the protocol at a discount. The treasury owns its own liquidity — forever.')}
+       ${arrow}
+       ${fnode('02', 'Back', 'Every $uOHM is backed by treasury assets. A floor that only rises as bonds flow in.')}
+       ${arrow}
+       ${fnode('03', 'Stake', 'Supply locks up as suOHM. Scarcity meets a rising floor — and the rebase compounds it.')}
+     </div>
+     <div class="loop mono">→ repeat. that&#39;s the whole flywheel. (3,3) 🦄</div>
+     <div class="foot"><div>🦄 same engine · now on Robinhood Chain via pools.trade</div><div class="mono" style="color:var(--pink)">uohmrh.xyz</div></div>
+   </div>`);
+
+// 9) ANATOMY OF $20B 2400x1350 — why OHM ran
+const why = (t, d) => `<div style="display:flex;gap:32px;align-items:flex-start;background:#fff;border:2px solid rgba(255,0,122,.25);border-radius:26px;padding:38px 48px;box-shadow:0 12px 40px rgba(255,0,122,.07)">
+  <div style="font-size:40px">🦄</div>
+  <div><div style="font-size:40px;font-weight:800;margin-bottom:10px">${t}</div>
+  <div style="font-size:28px;color:var(--dim);line-height:1.4;font-weight:500">${d}</div></div></div>`;
+assets['uohm-20b'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:110px 150px;display:flex;gap:100px;align-items:center}
+  .h{font-size:104px;font-weight:900;letter-spacing:-.02em;line-height:1.04;margin-bottom:38px}
+  .s{font-size:36px;color:var(--dim);line-height:1.5;font-weight:500}
+  .col{flex:1;display:flex;flex-direction:column;gap:26px}`,
+  `${field(2400, 1350, 32, 113)}
+   <div class="wrap">
+     <div style="flex:1.05">
+       <div class="mono" style="font-size:34px;letter-spacing:.3em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:22px">anatomy of a $20B run</div>
+       <div class="h">OHM didn&#39;t pump.<br><span class="grad">It compounded.</span></div>
+       <div class="s">2021: a token backed by its own treasury, paying stakers in more of itself, buying its own liquidity through bonds. The market had never seen a reflexive machine like it — $20B ATH.</div>
+       <div class="mono" style="margin-top:48px;font-size:32px;color:var(--pink);font-weight:700">$uOHM runs the same machine. · uohmrh.xyz</div>
+     </div>
+     <div class="col">
+       ${why('Protocol-owned liquidity', 'OHM never rented liquidity. It bought it via bonds — so the floor never walked away.')}
+       ${why('Staking locked the float', 'At peak, ~90% of OHM was staked. Almost nothing left to sell. Number went vertical.')}
+       ${why('The rebase paid you to hold', 'Balances compounded every 8 hours. Selling meant stepping off a moving train.')}
+     </div>
+   </div>`);
+
+// 10) INDEX 2400x1350 — the index only goes up
+assets['uohm-index'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:110px 150px;display:flex;gap:110px;align-items:center}
+  .h{font-size:108px;font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-bottom:38px}
+  .s{font-size:38px;color:var(--dim);line-height:1.5;font-weight:500}
+  .stat{background:#fff;border:2px solid rgba(255,0,122,.3);border-radius:26px;padding:40px 52px;box-shadow:0 14px 44px rgba(255,0,122,.08)}
+  .sv{font-size:64px;font-weight:900;color:var(--pink)}
+  .sl{font-size:24px;color:var(--dim);font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-top:8px}`,
+  `${field(2400, 1350, 30, 131)}
+   <div class="wrap">
+     <div style="flex:1.1">
+       <div class="mono" style="font-size:34px;letter-spacing:.3em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:22px">the index</div>
+       <div class="h">The price moves.<br><span class="grad">The index only climbs.</span></div>
+       <div class="s">Stake $uOHM → hold suOHM. Every epoch, the index rebases upward and your balance compounds — automatically, nothing to claim. Price is the market&#39;s mood. The index is math.</div>
+     </div>
+     <div style="flex:1;display:flex;flex-direction:column;gap:30px">
+       <div class="stat"><div class="sv mono">50,000%</div><div class="sl">target APY · auto-compounding</div></div>
+       <div class="stat"><div class="sv mono">288/day</div><div class="sl">rebases · every 5 minutes</div></div>
+       <div class="stat"><div class="sv mono">1 → 501×</div><div class="sl">index math over one year, compounded</div></div>
+       <div class="mono" style="font-size:26px;color:var(--dim);font-weight:600;text-align:center">simulated · not yield · uohmrh.xyz 🦄</div>
+     </div>
+   </div>`);
+
 for (const [name, html] of Object.entries(assets)) {
   fs.writeFileSync(path.join(OUT, name + '.html'), html);
   console.log('wrote', name + '.html');
