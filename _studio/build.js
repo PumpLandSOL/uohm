@@ -240,6 +240,35 @@ assets['uohm-index'] = page(2400, 1350, `
      </div>
    </div>`);
 
+// 11) DOCS 2400x1350 — read the docs
+const drow = (s, d) => `<div style="display:flex;align-items:center;gap:28px;background:#fff;border:2px solid rgba(255,0,122,.22);border-radius:22px;padding:28px 44px;box-shadow:0 10px 34px rgba(255,0,122,.06)">
+  <div class="mono" style="font-size:26px;color:var(--pink);font-weight:700">§</div>
+  <div style="font-size:34px;font-weight:800">${s}</div>
+  <div style="font-size:26px;color:var(--dim);font-weight:500;margin-left:auto;text-align:right">${d}</div></div>`;
+assets['uohm-docs'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:100px 150px;display:flex;gap:100px;align-items:center}
+  .h{font-size:100px;font-weight:900;letter-spacing:-.02em;line-height:1.05;margin-bottom:36px}
+  .s{font-size:36px;color:var(--dim);line-height:1.5;font-weight:500}
+  .col{flex:1.15;display:flex;flex-direction:column;gap:20px}
+  .pill{background:linear-gradient(92deg,#FF007A,#ff5ca8);color:#fff;border-radius:999px;padding:22px 52px;font-size:34px;font-weight:800;align-self:flex-start;margin-top:48px;box-shadow:0 16px 48px rgba(255,0,122,.3)}`,
+  `${field(2400, 1350, 30, 149)}
+   <div class="wrap">
+     <div style="flex:1">
+       <div class="mono" style="font-size:34px;letter-spacing:.3em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:22px">read the docs</div>
+       <div class="h">Every gear,<br><span class="grad">documented.</span></div>
+       <div class="s">A fully working rebase protocol — staking, bonding, treasury, the index — live on Robinhood Chain and launching through pools.trade. The docs walk every mechanism, including what&#39;s real and what&#39;s simulated.</div>
+       <div class="pill mono">uohmrh.xyz/docs 🦄</div>
+     </div>
+     <div class="col">
+       ${drow('The (3,3) game', 'why staking wins')}
+       ${drow('Rebases &amp; epochs', 'every 5 minutes')}
+       ${drow('The index &amp; suOHM', 'the only-up math')}
+       ${drow('Bonding &amp; vesting', 'discounts, 5-day vest')}
+       ${drow('Treasury &amp; backing', 'the floor')}
+       ${drow('Real vs simulated', 'no custody, honest')}
+     </div>
+   </div>`);
+
 for (const [name, html] of Object.entries(assets)) {
   fs.writeFileSync(path.join(OUT, name + '.html'), html);
   console.log('wrote', name + '.html');
