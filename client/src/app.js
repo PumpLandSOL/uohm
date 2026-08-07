@@ -165,6 +165,8 @@
   $('stakeBtn').onclick = async () => {
     if (!isW(wallet)) return toast('connect your wallet first');
     const amt = parseFloat($('stakeAmt').value); if (!(amt > 0)) return toast('enter an amount');
+    // hard gate BEFORE any real deposit leaves the wallet — the ledger would reject it after
+    if (stakeMode === 'stake' && CFG && CFG.minStake && amt < CFG.minStake) return toast('minimum stake is ' + tok(CFG.minStake) + ' $uOHM');
     try {
       if (stakeMode === 'stake') {
         const txHash = await depositToTreasury(amt);

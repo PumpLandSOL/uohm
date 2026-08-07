@@ -17,6 +17,7 @@ const UOHM_MINT = process.env.UOHM_MINT || '0x91F41b74b7906266d4D28a327EBD0ed86c
 // staking custody: real $uOHM deposits land here (key held offline by the operator — never on this server)
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '0x6A690F711928E8b938Fb5FE38F6fc2B8164Abc97';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';  // set to enable /api/withdrawals admin export
+const MIN_STAKE = +(process.env.MIN_STAKE || 300000);  // minimum $uOHM per stake deposit
 const REBASE_SEC = +(process.env.REBASE_SEC || 300);           // epoch length (demo: 5 min)
 const APY_TARGET = +(process.env.APY_TARGET || 50000);         // displayed APY %  (OHM-style, simulated)
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
@@ -109,12 +110,12 @@ function body(req) { return new Promise((r) => { let b = ''; req.on('data', (c) 
 
 http.createServer(async (req, res) => {
   const u = req.url.split('?')[0];
-  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, network: 'robinhood-chain' });
+  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, minStake: MIN_STAKE, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
   // stake = a real on-chain $uOHM transfer to the treasury; the client sends the tx hash after it confirms.
   // The ledger credits suOHM against that deposit. (Deposit hashes are recorded for reconciliation.)
-  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); if (!/^0x[0-9a-fA-F]{64}$/.test(d.txHash || '')) return json(res, 200, { error: 'missing deposit tx — stake sends $uOHM to the treasury first' }); if (db.tape.some((e) => e.tx === d.txHash)) return json(res, 200, { error: 'deposit already credited' }); const w = W(d.wallet); const idx = liveIndex(); const amt = +d.amount || 0; if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); db.tape[0].tx = d.txHash; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); if (!/^0x[0-9a-fA-F]{64}$/.test(d.txHash || '')) return json(res, 200, { error: 'missing deposit tx — stake sends $uOHM to the treasury first' }); if (db.tape.some((e) => e.tx === d.txHash)) return json(res, 200, { error: 'deposit already credited' }); const w = W(d.wallet); const idx = liveIndex(); const amt = +d.amount || 0; if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); if (amt < MIN_STAKE) return json(res, 200, { error: 'minimum stake is ' + MIN_STAKE.toLocaleString() + ' $uOHM' }); const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); db.tape[0].tx = d.txHash; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
   // unstake = join the withdrawal queue; payouts are sent manually from the treasury wallet.
   if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
   // operator export: who is owed what (requires ADMIN_KEY env)
