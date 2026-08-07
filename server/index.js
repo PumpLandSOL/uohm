@@ -44,6 +44,12 @@ const BONDS = [
 let db = { index: 1, epoch: 0, lastRebase: Date.now(), treasury: +(process.env.TREASURY_SEED || 84000), totalAgons: 0, wallets: {} };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'))); } catch (e) {}
 if (!db.wallets) db.wallets = {};
+if (!db.tape) db.tape = [];
+// the Stampede: rolling tape of protocol actions, newest first
+function tapePush(type, wallet, amount) {
+  db.tape.unshift({ t: Date.now(), type, w: wallet.slice(0, 4) + '…' + wallet.slice(-4), amount: +(+amount).toFixed(2) });
+  if (db.tape.length > 60) db.tape.length = 60;
+}
 let saveT = null; function save() { if (saveT) return; saveT = setTimeout(() => { saveT = null; try { fs.writeFileSync(DATA_PATH, JSON.stringify(db)); } catch (e) {} }, 800); }
 const isWallet = (s) => /^0x[a-fA-F0-9]{40}$/.test(s);
 
@@ -73,7 +79,7 @@ function metrics() {
     treasury: db.treasury, backingPerToken: backing, price: TOKEN_PRICE, marketCap: TOKEN_PRICE * circulating(),
     runwayDays: runway, rebaseSec: REBASE_SEC, nextRebaseIn: Math.max(0, REBASE_SEC - (Date.now() - db.lastRebase) / 1000),
     bonds: BONDS.map((b) => ({ id: b.id, name: b.name, discount: b.discount, vestDays: b.vestDays, price: TOKEN_PRICE * (1 - b.discount) })),
-    leaderboard, stakers: leaderboard.length, mint: UOHM_MINT,
+    leaderboard, stakers: leaderboard.length, mint: UOHM_MINT, tape: db.tape.slice(0, 12),
   };
 }
 function account(addr) {
@@ -99,15 +105,15 @@ http.createServer(async (req, res) => {
   if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
-  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const amt = Math.max(0, Math.min(+d.amount || 0, w.balance)); if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); w.balance -= amt; const ag = amt / idx; w.agons += ag; db.totalAgons += ag; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
-  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); w.balance += amt; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const amt = Math.max(0, Math.min(+d.amount || 0, w.balance)); if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); w.balance -= amt; const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); w.balance += amt; tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
   if (req.method === 'POST' && u === '/api/bond') {
     const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' });
     const m = BONDS.find((b) => b.id === d.market); if (!m) return json(res, 200, { error: 'bad market' });
     const usd = Math.max(0, +d.amount || 0); if (usd <= 0) return json(res, 200, { error: 'enter an amount' });
     const payout = usd / (TOKEN_PRICE * (1 - m.discount)); // discounted uOHM
     const w = W(d.wallet); const now = Date.now();
-    w.bonds.push({ market: m.name, payout, start: now, end: now + m.vestDays * 86400000, claimed: 0, done: false });
+    w.bonds.push({ market: m.name, payout, start: now, end: now + m.vestDays * 86400000, claimed: 0, done: false }); tapePush('bond', d.wallet, payout);
     db.treasury += usd; save();
     return json(res, 200, { ok: true, payout, ...account(d.wallet) });
   }

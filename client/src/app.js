@@ -92,6 +92,15 @@
       $('lbPanel').style.display = 'block';
       $('lbRows').innerHTML = M.leaderboard.map((b, i) => `<div class="row"><span>${i + 1}. <b class="cd">${b.wallet}</b></span><span><b class="tl">${tok(b.staked)} suOHM</b> <span style="color:var(--mut)">· ${pct(b.share)}</span></span></div>`).join('');
     }
+    // the Stampede: staking-ratio bar + live tape
+    $('stBar').style.width = Math.min(100, M.stakingRatio * 100).toFixed(2) + '%';
+    $('stRatioLbl').textContent = pct(M.stakingRatio) + ' of supply staked';
+    if (M.tape && M.tape.length) {
+      const ago = (t) => { const s = Math.max(1, (Date.now() - t) / 1000); return s < 60 ? Math.floor(s) + 's ago' : s < 3600 ? Math.floor(s / 60) + 'm ago' : Math.floor(s / 3600) + 'h ago'; };
+      const ico = { stake: '🦄', unstake: '🩸', bond: '💰' };
+      const verb = { stake: 'staked', unstake: 'unstaked', bond: 'bonded' };
+      $('stRows').innerHTML = M.tape.map((e) => `<div class="row"><span>${ico[e.type] || '·'} <b class="cd">${e.w}</b> ${verb[e.type] || e.type} <b class="tl">${tok(e.amount)} $uOHM</b></span><span style="color:var(--mut)">${ago(e.t)}</span></div>`).join('');
+    }
     calc();
     if (M.mint) { const bar = $('ca'); bar.style.display = 'flex'; $('caV').textContent = M.mint.slice(0, 6) + '…' + M.mint.slice(-4); bar.href = 'https://pools.trade'; $('caCopy').onclick = (e) => { e.preventDefault(); navigator.clipboard && navigator.clipboard.writeText(M.mint); $('caCopy').textContent = 'Copied'; setTimeout(() => $('caCopy').textContent = 'Copy', 1200); }; }
   }
