@@ -49,12 +49,24 @@ async function pollPrice() {
   } catch (e) { /* keep last good */ }
 }
 pollPrice(); setInterval(pollPrice, 60000);
+// The treasury wallet holds every staked $uOHM, so its on-chain balance IS the total staked pool.
+// We read it directly — the off-chain ledger's own tally can reset on redeploy, this cannot.
+let treasuryStaked = 0;
+async function pollTreasury() {
+  try {
+    const hex = await rpc('eth_call', [{ to: UOHM_MINT, data: '0x70a08231' + TREASURY_WALLET.slice(2).toLowerCase().padStart(64, '0') }, 'latest']);
+    treasuryStaked = Number(BigInt(hex)) / 1e18;
+  } catch (e) { /* keep last good */ }
+}
+pollTreasury(); setInterval(pollTreasury, 30000);
 const SEED_BALANCE = +(process.env.SEED_BALANCE || 1e6);       // demo: new wallet starts with this uOHM to try staking (raised from 1k — no more perceived stake cap)
 // per-rebase rate derived from target APY
 const REBASES_YR = 31557600 / REBASE_SEC;
 // current APY from the live pool, and the per-rebase rate derived from it
 // staked value from the COMMITTED index (no live fraction) — avoids a liveIndex→rate cycle
-function currentApy(ts) { const s = ts == null ? db.totalAgons * db.index : ts; return APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s))); }
+// pool = real staked $uOHM in the treasury (falls back to the ledger tally before the first poll)
+function poolStaked() { return treasuryStaked > 0 ? treasuryStaked : db.totalAgons * db.index; }
+function currentApy(ts) { const s = ts == null ? poolStaked() : ts; return APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s))); }
 function currentRate(ts) { return Math.pow(1 + currentApy(ts) / 100, 1 / REBASES_YR) - 1; }
 const BONDS = [
   { id: 'eth', name: 'ETH', discount: 0.065, vestDays: 5 },
@@ -89,7 +101,9 @@ function totalStaked(idx) { return db.totalAgons * (idx || liveIndex()); }
 const circulating = () => TOTAL_SUPPLY;
 
 function metrics() {
-  const idx = liveIndex(); const ts = totalStaked(idx);
+  const idx = liveIndex();
+  // total staked = the treasury's real on-chain $uOHM balance (authoritative pool)
+  const ts = poolStaked();
   const leaderboard = Object.entries(db.wallets).map(([a, w]) => ({ a, staked: w.agons * idx }))
     .filter((x) => x.staked > 0.001).sort((x, y) => y.staked - x.staked).slice(0, 8)
     .map((x) => ({ wallet: x.a.slice(0, 4) + '…' + x.a.slice(-4), staked: x.staked, share: ts > 0 ? x.staked / ts : 0 }));
