@@ -140,6 +140,31 @@ assets['uohm-launch'] = page(2400, 1350, `
      <div class="pill mono">uohmrh.xyz</div>
    </div>`);
 
+// 7) VS LEGENDS 2400x1350 — OHM / Wonderland / uOHM comparison
+const vrow = (name, tick, ath, fate, us) => `<div style="display:flex;align-items:center;gap:44px;background:${us ? 'linear-gradient(92deg,#FF007A,#ff5ca8)' : '#fff'};border:2px solid ${us ? '#FF007A' : 'rgba(255,0,122,.25)'};border-radius:28px;padding:44px 60px;${us ? 'box-shadow:0 20px 60px rgba(255,0,122,.3)' : 'box-shadow:0 12px 40px rgba(255,0,122,.07)'}">
+  <div style="flex:1.2"><div style="font-size:52px;font-weight:900;color:${us ? '#fff' : 'var(--ink)'}">${name}</div>
+    <div class="mono" style="font-size:26px;font-weight:700;color:${us ? 'rgba(255,255,255,.85)' : 'var(--dim)'};margin-top:8px">${tick}</div></div>
+  <div style="flex:1"><div style="font-size:24px;font-weight:700;letter-spacing:.14em;color:${us ? 'rgba(255,255,255,.75)' : 'var(--dim)'}">ATH</div>
+    <div class="mono" style="font-size:46px;font-weight:700;color:${us ? '#fff' : 'var(--pink)'}">${ath}</div></div>
+  <div style="flex:1.5;font-size:28px;font-weight:600;line-height:1.35;color:${us ? '#fff' : 'var(--dim)'}">${fate}</div></div>`;
+assets['uohm-vs-legends'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:110px 150px;display:flex;flex-direction:column}
+  .ey{font-size:34px;letter-spacing:.32em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:24px}
+  .h{font-size:96px;font-weight:900;letter-spacing:-.02em;margin-bottom:64px}
+  .rows{display:flex;flex-direction:column;gap:32px}
+  .foot{margin-top:auto;display:flex;justify-content:space-between;font-size:30px;color:var(--dim);font-weight:600}`,
+  `${field(2400, 1350, 34, 87)}
+   <div class="wrap">
+     <div class="ey mono">the (3,3) lineage</div>
+     <div class="h">Same engine. <span class="grad">New chain.</span></div>
+     <div class="rows">
+       ${vrow('OlympusDAO', '$OHM · Ethereum · 2021', '$20B', 'invented the engine. staking, bonding, protocol-owned liquidity.', false)}
+       ${vrow('Wonderland', '$TIME · Avalanche · 2021', '$2B', 'proved it forks. biggest treasury on Avalanche — until it wasn&#39;t.', false)}
+       ${vrow('uOHM', '$uOHM · Robinhood Chain · 2026', 'unwritten', 'same engine, first on Robinhood Chain — launching via pools.trade. 🦄', true)}
+     </div>
+     <div class="foot"><div>🦄 simulated · no custody · not yield — it&#39;s a game</div><div class="mono" style="color:var(--pink)">uohmrh.xyz</div></div>
+   </div>`);
+
 for (const [name, html] of Object.entries(assets)) {
   fs.writeFileSync(path.join(OUT, name + '.html'), html);
   console.log('wrote', name + '.html');
