@@ -30,7 +30,7 @@ async function pollPrice() {
   } catch (e) { /* keep last good */ }
 }
 pollPrice(); setInterval(pollPrice, 60000);
-const SEED_BALANCE = +(process.env.SEED_BALANCE || 1000);      // demo: new wallet starts with this uOHM to try staking
+const SEED_BALANCE = +(process.env.SEED_BALANCE || 1e6);       // demo: new wallet starts with this uOHM to try staking (raised from 1k — no more perceived stake cap)
 // per-rebase rate derived from target APY
 const REBASES_YR = 31557600 / REBASE_SEC;
 const RATE = Math.pow(1 + APY_TARGET / 100, 1 / REBASES_YR) - 1;
@@ -45,6 +45,8 @@ let db = { index: 1, epoch: 0, lastRebase: Date.now(), treasury: +(process.env.T
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA_PATH, 'utf8'))); } catch (e) {}
 if (!db.wallets) db.wallets = {};
 if (!db.tape) db.tape = [];
+// migration: wallets seeded under the old 1k cap get topped up to the new seed
+for (const w of Object.values(db.wallets)) if (w.seeded && w.balance <= 1000) w.balance += SEED_BALANCE - 1000;
 // the Stampede: rolling tape of protocol actions, newest first
 function tapePush(type, wallet, amount) {
   db.tape.unshift({ t: Date.now(), type, w: wallet.slice(0, 4) + '…' + wallet.slice(-4), amount: +(+amount).toFixed(2) });

@@ -269,6 +269,34 @@ assets['uohm-docs'] = page(2400, 1350, `
      </div>
    </div>`);
 
+// 12) LIFTOFF 2400x1350 — launch-day status board
+const chk = (t, d) => `<div style="display:flex;align-items:center;gap:30px;background:#fff;border:2px solid rgba(255,0,122,.25);border-radius:24px;padding:34px 46px;box-shadow:0 12px 38px rgba(255,0,122,.07)">
+  <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(140deg,#FF007A,#ff5ca8);display:flex;align-items:center;justify-content:center;color:#fff;font-size:32px;font-weight:900;flex:none">✓</div>
+  <div><div style="font-size:38px;font-weight:800">${t}</div>
+  <div style="font-size:26px;color:var(--dim);font-weight:500;margin-top:4px">${d}</div></div></div>`;
+assets['uohm-liftoff'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;padding:100px 150px;display:flex;gap:100px;align-items:center}
+  .h{font-size:112px;font-weight:900;letter-spacing:-.02em;line-height:1.03;margin-bottom:36px}
+  .s{font-size:36px;color:var(--dim);line-height:1.5;font-weight:500}
+  .ca{margin-top:52px;background:linear-gradient(92deg,#FF007A,#ff5ca8);color:#fff;border-radius:999px;padding:24px 44px;font-size:29px;font-weight:700;display:inline-flex;gap:20px;align-items:center;box-shadow:0 18px 50px rgba(255,0,122,.32)}
+  .col{flex:1.05;display:flex;flex-direction:column;gap:24px}`,
+  `${field(2400, 1350, 30, 163)}
+   <div class="wrap">
+     <div style="flex:1">
+       <div class="mono" style="font-size:34px;letter-spacing:.3em;color:var(--pink);text-transform:uppercase;font-weight:700;margin-bottom:22px">● live · robinhood chain</div>
+       <div class="h">The unicorn<br><span class="grad">is out.</span></div>
+       <div class="s">$uOHM is live via pools.trade. The index is climbing, the epochs are counting, the treasury is open. Every 5 minutes, the herd gets paid.</div>
+       <div class="ca mono"><span style="letter-spacing:.12em">CA</span> 0x91F4…9261 <span style="opacity:.75">· full CA at uohmrh.xyz</span></div>
+     </div>
+     <div class="col">
+       ${chk('CA live', 'launched via pools.trade — verify on site')}
+       ${chk('Staking open', '$uOHM → suOHM · 288 rebases a day')}
+       ${chk('Bonds open', 'ETH · LP · USDC — feed the treasury')}
+       ${chk('The Stampede rolling', 'every stake on the live (3,3) tape')}
+       <div class="mono" style="font-size:26px;color:var(--dim);font-weight:600;text-align:center">simulated · not yield · 🦄 uohmrh.xyz</div>
+     </div>
+   </div>`);
+
 for (const [name, html] of Object.entries(assets)) {
   fs.writeFileSync(path.join(OUT, name + '.html'), html);
   console.log('wrote', name + '.html');
