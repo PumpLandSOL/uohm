@@ -18,6 +18,14 @@ const UOHM_MINT = process.env.UOHM_MINT || '0x91F41b74b7906266d4D28a327EBD0ed86c
 const TREASURY_WALLET = process.env.TREASURY_WALLET || '0x6A690F711928E8b938Fb5FE38F6fc2B8164Abc97';
 const ADMIN_KEY = process.env.ADMIN_KEY || '';  // set to enable /api/withdrawals admin export
 const MIN_STAKE = +(process.env.MIN_STAKE || 300000);  // minimum $uOHM per stake deposit
+// Robinhood Chain mainnet — balances are read here directly so the app shows the truth
+// no matter which chain the user's wallet is parked on.
+const RPC_URL = process.env.RPC_URL || 'https://rpc.mainnet.chain.robinhood.com';
+const CHAIN_ID = +(process.env.CHAIN_ID || 4663);
+async function rpc(method, params) {
+  const r = await fetch(RPC_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) });
+  const j = await r.json(); if (j.error) throw new Error(j.error.message); return j.result;
+}
 const REBASE_SEC = +(process.env.REBASE_SEC || 300);           // epoch length (demo: 5 min)
 const APY_TARGET = +(process.env.APY_TARGET || 50000);         // displayed APY %  (OHM-style, simulated)
 const TOTAL_SUPPLY = +(process.env.TOTAL_SUPPLY || 1e9);       // fixed supply at launch
@@ -110,12 +118,60 @@ function body(req) { return new Promise((r) => { let b = ''; req.on('data', (c) 
 
 http.createServer(async (req, res) => {
   const u = req.url.split('?')[0];
-  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, minStake: MIN_STAKE, network: 'robinhood-chain' });
+  if (u === '/api/config') return json(res, 200, { token: TOKEN, rebaseSec: REBASE_SEC, apy: APY_TARGET, mint: UOHM_MINT, treasury: TREASURY_WALLET, minStake: MIN_STAKE, chainId: CHAIN_ID, rpcUrl: RPC_URL, network: 'robinhood-chain' });
   if (u === '/api/metrics') return json(res, 200, metrics());
+  if (req.method === 'POST' && u === '/api/balance') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); try { const hex = await rpc('eth_call', [{ to: UOHM_MINT, data: '0x70a08231' + d.wallet.slice(2).toLowerCase().padStart(64, '0') }, 'latest']); return json(res, 200, { balance: Number(BigInt(hex)) / 1e18 }); } catch (e) { return json(res, 200, { error: 'rpc unavailable' }); } }
   if (req.method === 'POST' && u === '/api/account') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'connect a valid EVM wallet' }); return json(res, 200, account(d.wallet)); }
-  // stake = a real on-chain $uOHM transfer to the treasury; the client sends the tx hash after it confirms.
-  // The ledger credits suOHM against that deposit. (Deposit hashes are recorded for reconciliation.)
-  if (req.method === 'POST' && u === '/api/stake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); if (!/^0x[0-9a-fA-F]{64}$/.test(d.txHash || '')) return json(res, 200, { error: 'missing deposit tx — stake sends $uOHM to the treasury first' }); if (db.tape.some((e) => e.tx === d.txHash)) return json(res, 200, { error: 'deposit already credited' }); const w = W(d.wallet); const idx = liveIndex(); const amt = +d.amount || 0; if (amt <= 0) return json(res, 200, { error: 'nothing to stake' }); if (amt < MIN_STAKE) return json(res, 200, { error: 'minimum stake is ' + MIN_STAKE.toLocaleString() + ' $uOHM' }); const ag = amt / idx; w.agons += ag; db.totalAgons += ag; tapePush('stake', d.wallet, amt); db.tape[0].tx = d.txHash; save(); return json(res, 200, { ok: true, ...account(d.wallet) }); }
+  // stake = a real on-chain $uOHM transfer to the treasury. The server VERIFIES the tx on
+  // Robinhood Chain — it must exist, have succeeded, be a transfer() of $uOHM from this wallet
+  // to the treasury — and credits suOHM for the ACTUAL on-chain amount, not the client's claim.
+  if (req.method === 'POST' && u === '/api/stake') {
+    const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' });
+    if (!/^0x[0-9a-fA-F]{64}$/.test(d.txHash || '')) return json(res, 200, { error: 'missing deposit tx — stake sends $uOHM to the treasury first' });
+    const txHash = d.txHash.toLowerCase();
+    if (db.tape.some((e) => e.tx === txHash)) return json(res, 200, { error: 'deposit already credited' });
+    let amt;
+    try {
+      const [tx, rc] = await Promise.all([rpc('eth_getTransactionByHash', [txHash]), rpc('eth_getTransactionReceipt', [txHash])]);
+      if (!tx || !rc) return json(res, 200, { error: 'deposit not found on Robinhood Chain — nothing was credited' });
+      if (rc.status !== '0x1') return json(res, 200, { error: 'deposit transaction failed on-chain' });
+      if ((tx.to || '').toLowerCase() !== UOHM_MINT.toLowerCase()) return json(res, 200, { error: 'not a $uOHM transfer' });
+      if ((tx.from || '').toLowerCase() !== d.wallet.toLowerCase()) return json(res, 200, { error: 'deposit was not sent from your wallet' });
+      // decode transfer(address to, uint256 value): 0xa9059cbb + to(32) + value(32)
+      const inp = (tx.input || '').toLowerCase();
+      if (!inp.startsWith('0xa9059cbb') || inp.length < 138) return json(res, 200, { error: 'not a token transfer' });
+      const to = '0x' + inp.slice(34, 74);
+      if (to !== TREASURY_WALLET.toLowerCase()) return json(res, 200, { error: 'deposit did not go to the treasury' });
+      amt = Number(BigInt('0x' + inp.slice(74, 138))) / 1e18;
+    } catch (e) { return json(res, 200, { error: 'could not verify deposit — try again in a moment' }); }
+    if (!(amt > 0)) return json(res, 200, { error: 'zero-value deposit' });
+    if (amt < MIN_STAKE) return json(res, 200, { error: 'below minimum — deposit was ' + amt.toLocaleString() + ', minimum is ' + MIN_STAKE.toLocaleString() + ' $uOHM' });
+    const w = W(d.wallet); const idx = liveIndex(); const ag = amt / idx; w.agons += ag; db.totalAgons += ag;
+    tapePush('stake', d.wallet, amt); db.tape[0].tx = txHash; db.tape[0].ag = ag; db.tape[0].addr = d.wallet; save();
+    return json(res, 200, { ok: true, ...account(d.wallet) });
+  }
+  // operator: re-verify every credited stake against the chain and reverse any that don't check out.
+  if (u === '/api/admin/reverify') {
+    const q = new URL(req.url, 'http://x').searchParams; if (!ADMIN_KEY || q.get('key') !== ADMIN_KEY) return json(res, 403, { error: 'nope' });
+    const reversed = [];
+    for (const e of db.tape) {
+      if (e.type !== 'stake' || !e.tx || e.bad) continue;
+      let ok = false;
+      try {
+        const tx = await rpc('eth_getTransactionByHash', [e.tx]); const rc = await rpc('eth_getTransactionReceipt', [e.tx]);
+        const inp = tx && (tx.input || '').toLowerCase();
+        ok = !!(tx && rc && rc.status === '0x1' && (tx.to || '').toLowerCase() === UOHM_MINT.toLowerCase()
+          && inp && inp.startsWith('0xa9059cbb') && ('0x' + inp.slice(34, 74)) === TREASURY_WALLET.toLowerCase());
+      } catch (x) { continue; /* leave untouched if RPC is flaky */ }
+      if (!ok) {
+        const addr = e.addr; const ag = e.ag != null ? e.ag : (e.amount / liveIndex());
+        if (addr && db.wallets[addr]) { db.wallets[addr].agons = Math.max(0, db.wallets[addr].agons - ag); }
+        db.totalAgons = Math.max(0, db.totalAgons - ag);
+        e.bad = true; reversed.push({ wallet: e.w, amount: e.amount, tx: e.tx });
+      }
+    }
+    save(); return json(res, 200, { reversed, count: reversed.length });
+  }
   // unstake = join the withdrawal queue; payouts are sent manually from the treasury wallet.
   if (req.method === 'POST' && u === '/api/unstake') { const d = await body(req); if (!isWallet(d.wallet || '')) return json(res, 200, { error: 'bad wallet' }); const w = W(d.wallet); const idx = liveIndex(); const have = stakedOf(w, idx); const amt = Math.max(0, Math.min(+d.amount || 0, have)); if (amt <= 0) return json(res, 200, { error: 'nothing staked' }); const ag = amt / idx; w.agons = Math.max(0, w.agons - ag); db.totalAgons = Math.max(0, db.totalAgons - ag); db.withdrawals.push({ wallet: d.wallet, amount: +amt.toFixed(4), t: Date.now(), status: 'pending' }); tapePush('unstake', d.wallet, amt); save(); return json(res, 200, { ok: true, queued: +amt.toFixed(4), ...account(d.wallet) }); }
   // operator export: who is owed what (requires ADMIN_KEY env)

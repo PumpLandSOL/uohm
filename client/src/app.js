@@ -58,14 +58,28 @@
   // ---- fetch ----
   async function loadConfig() { try { CFG = await (await fetch('/api/config')).json(); } catch (e) {} }
   async function loadMetrics() { try { M = await (await fetch('/api/metrics')).json(); reanchor(); renderMetrics(); renderBonds(); } catch (e) {} }
-  // real on-chain $uOHM balance of the connected wallet (ERC-20 balanceOf via the injected provider)
+  // real on-chain $uOHM balance, read server-side from the Robinhood Chain RPC —
+  // correct even when the user's wallet is parked on a different chain.
   async function loadChainBalance() {
-    if (!window.ethereum || !CFG || !CFG.mint || !isW(wallet)) { chainBal = null; return; }
+    if (!isW(wallet)) { chainBal = null; return; }
     try {
-      const hex = await window.ethereum.request({ method: 'eth_call', params: [{ to: CFG.mint, data: '0x70a08231' + wallet.slice(2).toLowerCase().padStart(64, '0') }, 'latest'] });
-      chainBal = Number(BigInt(hex)) / 1e18;
+      const r = await (await fetch('/api/balance', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet }) })).json();
+      chainBal = r.error ? null : r.balance;
     } catch (e) { chainBal = null; }
     renderAccount();
+  }
+  // deposits must go out on Robinhood Chain — switch (or add) the network first
+  async function ensureChain() {
+    const idHex = '0x' + (+CFG.chainId).toString(16);
+    const cur = await window.ethereum.request({ method: 'eth_chainId' });
+    if (cur === idHex) return;
+    try {
+      await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: idHex }] });
+    } catch (e) {
+      if (e && (e.code === 4902 || String(e.message).includes('4902') || String(e.message).toLowerCase().includes('unrecognized'))) {
+        await window.ethereum.request({ method: 'wallet_addEthereumChain', params: [{ chainId: idHex, chainName: 'Robinhood Chain', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: [CFG.rpcUrl], blockExplorerUrls: ['https://robinhoodchain.blockscout.com'] }] });
+      } else throw new Error('switch your wallet to Robinhood Chain to stake');
+    }
   }
   async function loadAccount() { if (!isW(wallet)) return; try { A = await (await fetch('/api/account', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ wallet }) })).json(); reanchor(); renderAccount(); } catch (e) {} }
   function reanchor() {
@@ -151,6 +165,7 @@
   async function depositToTreasury(amt) {
     if (!window.ethereum) throw new Error('No EVM wallet found');
     if (!CFG || !CFG.mint || !CFG.treasury) throw new Error('config not loaded — try again');
+    await ensureChain();
     const wei = BigInt(Math.round(amt * 1e6)) * (10n ** 12n);
     const data = '0xa9059cbb' + CFG.treasury.slice(2).toLowerCase().padStart(64, '0') + wei.toString(16).padStart(64, '0');
     const txHash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: wallet, to: CFG.mint, data }] });
@@ -170,7 +185,8 @@
     try {
       if (stakeMode === 'stake') {
         const txHash = await depositToTreasury(amt);
-        const r = await post('/api/stake', { wallet, amount: amt, txHash });
+        toast('Deposit confirmed — verifying on-chain…');
+        const r = await post('/api/stake', { wallet, txHash });
         if (r.error) return toast(r.error);
         A = r; reanchor(); renderAccount(); loadChainBalance(); $('stakeAmt').value = '';
         toast('Deposited & staked ' + tok(amt) + ' $uOHM (3,3)');
