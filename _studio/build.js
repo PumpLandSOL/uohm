@@ -297,6 +297,23 @@ assets['uohm-liftoff'] = page(2400, 1350, `
      </div>
    </div>`);
 
+// 13) 24-HOUR APY BOOST 2400x1350
+assets['uohm-boost'] = page(2400, 1350, `
+  .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .ey{font-size:40px;letter-spacing:.28em;color:#c40062;text-transform:uppercase;font-weight:900;margin-bottom:30px}
+  .huge{font-size:340px;font-weight:900;letter-spacing:-.03em;line-height:.9;background:linear-gradient(92deg,#FF007A,#ff2b90,#ffb020);-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:0 20px 60px rgba(255,0,122,.25)}
+  .apy{font-size:60px;font-weight:900;color:var(--dim);letter-spacing:.3em;margin-top:6px}
+  .clk{margin-top:44px;background:#fff;border:2px solid rgba(255,0,122,.5);border-radius:999px;padding:22px 56px;font-size:40px;font-weight:800;display:inline-flex;gap:22px;align-items:center;box-shadow:0 16px 48px rgba(255,0,122,.2)}
+  .sub{font-size:34px;color:var(--dim);font-weight:600;margin-top:40px}`,
+  `${field(2400, 1350, 44, 173)}
+   <div class="wrap">
+     <div class="ey mono">⚡ 24-hour APY boost · for 24 hours only ⚡</div>
+     <div class="huge">250,000%</div>
+     <div class="apy mono">APY</div>
+     <div class="clk mono"><span style="color:#c40062">⚡ ENDS IN</span> <span style="color:var(--ink)">23:59:47</span></div>
+     <div class="sub">every epoch · all day · on your whole staked bag — 🦄 uohmrh.xyz</div>
+   </div>`);
+
 for (const [name, html] of Object.entries(assets)) {
   fs.writeFileSync(path.join(OUT, name + '.html'), html);
   console.log('wrote', name + '.html');

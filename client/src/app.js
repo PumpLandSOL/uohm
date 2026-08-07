@@ -107,7 +107,7 @@
       if (note) note.innerHTML = '⚡ 24-HOUR APY BOOST · <span id="boostCd" class="cd"></span> left';
     } else {
       boostLeft = 0; if (card) card.classList.remove('boosting');
-      if (note) note.textContent = 'scales with the staked pool';
+      if (note) note.textContent = '🦄 fixed 250,000% · every epoch';
     }
     $('mTreasury').textContent = money(M.treasury);
     $('mBacking').textContent = 'backing $' + M.backingPerToken.toFixed(6) + ' / $uOHM';

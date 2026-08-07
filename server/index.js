@@ -75,7 +75,9 @@ function poolStaked() { return treasuryStaked > 0 ? treasuryStaked : db.totalAgo
 // boost window: env-armed, or persisted in the ledger once armed via admin
 function boostUntil() { return Math.max(BOOST_UNTIL_ENV, db.boostUntil || 0, BOOST_HOURS > 0 ? BOOT_TS + BOOST_HOURS * 3600e3 : 0); }
 function boostActive() { return Date.now() < boostUntil(); }
+const FIXED_APY = +(process.env.FIXED_APY || 250000);  // pin the displayed/emission APY; set 0 to use dynamic
 function currentApy(ts) {
+  if (FIXED_APY > 0) return FIXED_APY;
   const s = ts == null ? poolStaked() : ts;
   const base = APY_MIN + (APY_MAX - APY_MIN) * (APY_HALF / (APY_HALF + Math.max(0, s)));
   return boostActive() ? Math.max(base, BOOST_APY) : base;

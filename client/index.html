@@ -110,6 +110,8 @@
   .stat.boosting{box-shadow:0 0 0 1px rgba(255,0,122,.5),0 10px 40px rgba(255,0,122,.28)}
   .stat.boosting #mApyNote{color:#c40062;font-weight:800}
   @keyframes bshimmer{0%{background-position:0 0}100%{background-position:200% 0}}
+  /* fixed 250,000% APY — golden gradient number */
+  #mApy{background:linear-gradient(92deg,#ffb020,#ffd24d,#ff8f1f,#FF007A);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;animation:bshimmer 3.5s linear infinite;filter:drop-shadow(0 4px 14px rgba(255,160,32,.35))}
 
   /* ── panels ── */
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);padding:28px;margin-top:20px;box-shadow:var(--sh)}
@@ -195,7 +197,7 @@
     <h1>Stake <span class="tok">$uOHM</span>. Earn the rebase.<br><em>Ride the unicorn.</em></h1>
     <div class="lede">An OHM-style reserve protocol launching on <b>pools.trade</b>, Uniswap's launchpad on Robinhood Chain. <b>Stake</b> to auto-compound every epoch, <b>bond</b> to buy $uOHM at a discount and grow the treasury that backs it. <b>(3,3)</b> — but make it a unicorn.</div>
     <div class="grid feat">
-      <div class="stat big hl"><div class="l">APY</div><div class="v num" id="mApy">—</div><div class="s" id="mApyNote">scales with the staked pool</div></div>
+      <div class="stat big hl"><div class="l">APY</div><div class="v num" id="mApy">—</div><div class="s" id="mApyNote">🦄 fixed 250,000% · every epoch</div></div>
       <div class="stat big"><div class="l">Treasury Balance</div><div class="v num" id="mTreasury">—</div><div class="s" id="mBacking">backing —</div></div>
       <div class="stat big rebase"><div class="l">Next Rebase</div><div class="v cd" id="mRebase">—</div><div class="s">epoch <span id="mEpoch">0</span></div></div>
     </div>
